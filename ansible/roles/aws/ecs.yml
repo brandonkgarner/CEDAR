@@ -1,0 +1,125 @@
+---
+# ECS
+
+- name: ecs [ECS] cluster creation
+  ecs_cluster:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{ project.region }}"
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+    delay: "{{ item.delay}}"
+    repeat: "{{ item.repeat}}"
+  with_items: "{{ project.ecs_clusters }}"
+  register: clusters
+
+## module to convert files given in config injected into the "project" dictionary
+##  returns lists of {'tasks':tasks, 'volumes':vlms, 'services':svcs,'containers':tasks_containers, 'missing':warn}
+- name: ecs [ECS] COMPOSE
+  cd_ecs_compose:
+    cluster_list: "{{ project.ecs_clusters }}"
+  register: ecs_compose
+
+### BELOW is a HACK to update versions
+- name: "Check latest version version of task definition"
+  ecs_taskdefinition:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    family: "{{ item.name }}"
+    state: "{{ item.state }}"
+    region: "{{ project.region }}"
+    containers: "{{ item.containers }}"
+  register: task_output
+  with_items: "{{ ecs_compose.result.containers }}"
+
+- debug: msg="Revision {{item.taskdefinition.revision}} is latest and {{item.taskdefinition.status}}"
+  with_items: "{{ task_output.results }}"
+
+- name: "Make latest revision inactive"
+  ecs_taskdefinition:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{ project.region }}"
+    family: "{{ item.taskdefinition.family }}"
+    state: absent
+    revision: "{{ item.taskdefinition.revision }}"
+  register: task_output2
+  when: "{{ item.taskdefinition.revision is defined }}"
+  with_items: "{{ task_output.results }}"
+
+- name: "Create new revision for task definition, with new values"
+  ecs_taskdefinition:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    family: "{{ item.taskdefinition.family }}"
+    state: "{{ 'present' if item.taskdefinition.status == 'ACTIVE' else 'absent'}}"
+    region: "{{ project.region }}"
+    revision: "{{ item.taskdefinition.revision }}"
+    containers: "{{ item.taskdefinition.containerDefinitions }}"
+    #revision: "{{active_revision}}"
+  register: task_output3
+  when: "{{ item.taskdefinition.revision is defined }}"
+  with_items: "{{ task_output.results }}"
+
+- name: SERVICEs [ECS] service states
+  ecs_service:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{ project.region }}"
+    state: "{{ item.state }}"
+    name: "{{ item.name }}"
+    cluster: "{{ item.cluster }}"
+    task_definition: "{{ item.task_definition }}"
+    desired_count: "{{ item.desired_count }}"
+  with_items: "{{ ecs_compose.result.services }}"
+
+################################################
+####  RUN TASKS NOW  NOT FOUND IN SERVICES ####
+###############################################
+
+- name: RUN TASKS [ECS]
+  ecs_task:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{ project.region }}"
+    operation: "{{ item.operation }}"
+    cluster: "{{ item.cluster }}"
+    task_definition: "{{ item.name }}"
+    count: "{{ item.count }}"
+    started_by: "{{ item.started_by }}"
+  with_items: "{{ ecs_compose.result.tasks }}"
+  when: "{{ item.operation ==  'run'}}"
+
+- name: STOP TASKS [ECS]
+  ecs_task:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{ project.region }}"
+    operation: "{{ item.operation }}"
+    cluster: "{{ item.cluster }}"
+    task_definition: "{{ item.name }}"
+    count: "{{ item.count }}"
+    started_by: "{{ item.started_by }}"
+  with_items: "{{ ecs_compose.result.tasks }}"
+  when: "{{ item.operation ==  'stop'}}"
+
+- name: START TASKS [ECS]
+  ecs_task:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{ project.region }}"
+    operation: "{{ item.operation }}"
+    cluster: "{{ item.cluster }}"
+    task_definition: "{{ item.name }}"
+    count: "{{ item.count }}"
+    started_by: "{{ item.started_by }}"
+  with_items: "{{ ecs_compose.result.tasks }}"
+  when: "{{ item.operation ==  'start'}}"

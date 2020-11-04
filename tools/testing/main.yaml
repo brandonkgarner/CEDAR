@@ -1,0 +1,19 @@
+---
+- name: INITIAL PROJECT SETUP  project VAR
+  set_fact:
+    project: "{{ CN_AppProxy }}"
+- import_tasks: ../aws/sts.yml
+  vars:
+    project: "{{ project }}"
+- import_tasks: ../aws/IAM.yml
+  vars:
+    project: "{{ project }}"
+- import_tasks: ../aws/lambda.yml
+  vars:
+    project: "{{ project }}"
+- import_tasks: ../aws/agw_model.yml
+  vars:
+    project: "{{ project }}"
+- import_tasks: ../aws/_agw.yml
+  vars:
+    project: "{{ project }}"

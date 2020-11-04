@@ -1,0 +1,49 @@
+---
+# This playbook deploys a specific MODELS FOR API set given the properties found
+- name: update/EXISTS  B A S I C [API MODELS] with description
+  cr_api_model:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    state: "{{ item.state }}"
+    name: "{{ item.name }}" 
+    description: "{{ item.description }}"  
+    restApiId: null
+    apiName: "{{ item.api }}"  
+    contentType: "{{ item.contentType }}"  
+    schema: "{{ item.schema }}"           
+  with_items: "{{ project.api_models.basic }}"
+  register: api_modelresults
+  when: item.description is defined
+
+- name: update/EXISTS  B A S I C [API MODELS] NO description
+  cr_api_model:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    state: "{{ item.state }}"
+    name: "{{ item.name }}" 
+    restApiId: null
+    apiName: "{{ item.api }}"  
+    contentType: "{{ item.contentType }}"  
+    schema: "{{ item.schema }}"           
+  with_items: "{{ project.api_models.basic }}"
+  when:  not (item.description is defined)
+
+- name: update/EXISTS  A D V A N C E D  [API MODELS] 
+  cr_api_model:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    state: "{{ item.state }}"
+    name: "{{ item.name }}" 
+    description: "{{ item.description | default('N/A') }}"  
+    restApiId: null
+    apiName: "{{ item.api }}"  
+    contentType: "{{ item.contentType }}"  
+    schema: "{{ item.schema }}"           
+  with_items: "{{ project.api_models.dependant }}"
+  register: api_modeladvancedresults
+
+
+# USES boto3 to update Gateway MeTHods

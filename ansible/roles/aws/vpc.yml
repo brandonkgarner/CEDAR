@@ -1,0 +1,161 @@
+---
+# This playbook deploys the whole application stack in this site.
+# {{ project }} variable passed in from include
+
+# VPC, INTERNET GATEWAY, ROUTING TABLES, SUBNETS , SECURITY GROUPS,  KEY PAIR
+
+- name: get ..[VPC][FACTS] initial facts
+  ec2_vpc_net_facts:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+  register: vpcFacts
+
+- name: Searching [VPC] for existing based on CIDR block
+  set_fact:
+    vpcObj: "{{ item }}"
+  when: '{{ item.cidr_block == project.vpc.cidr_block if project.vpc is defined else False }}'
+  with_items: "{{ vpcFacts.vpcs }}"
+  register: vpcFound
+  changed_when: '{{ item.cidr_block == project.vpc.cidr_block }}'
+
+- name: setup [VPC][VPC - APPLIANCE]..creating..
+  ec2_vpc:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    state: "{{ project.vpc.state}}"
+    cidr_block: "{{project.vpc.cidr_block}}"
+    resource_tags: '{{ project.vpc.resource_tags }}'
+    region: "{{ project.region }}"
+    wait: yes
+    wait_timeout: "{{ project.vpc.wait_timeout }}"
+  register: VPCID
+  when: "{{ vpcFound.changed != True }}"
+
+
+
+- name: '.. [VPC][GET VPC now] only if state ! available'
+  ec2_vpc_net_facts:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+    filters:
+      vpc-id: '{{ VPCID.vpc.id }}'
+  delay: 10
+  register: newVPC
+  when: "{{ VPCID.vpc.state!='available' if VPCID.changed else False }}"
+
+
+- name: reset [VPC OBJECT] if changed..
+  set_fact:
+    vpcObj: "{{ newVPC.vpcs[0] if VPCID.vpc.state!='available' else VPCID.vpc  }}"
+  when: "{{ VPCID.changed }}"
+
+
+- name: check [VPC] did setup or STOP!!!
+  fail:
+    msg: "No VPC was found and is needed to continue"
+  when: "{{ vpcObj is not defined }}"
+
+- name: "setup [VPC][INTERNET - GATEWAY]..{{ project.igws.name}}"
+  ec2_vpc_igw:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+    vpc_id: "{{ vpcObj.id }}"
+    state: "{{ project.igws.state }}"
+  register: igw
+  when: "{{ project.igws is defined}}"
+
+
+- name: setup [VPC][SUBNETS]..
+  ec2_vpc_subnet:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    state: "{{ item.state }}"
+    region: "{{project.region}}"
+    vpc_id: "{{ vpcObj.id }}"
+    cidr: "{{ item.cidr }}"
+    az: "{{project.region}}{{ item.az }}"
+    tags:
+      Name: "{{ item.name }}"
+  register: project_subnets
+  with_items: "{{ project.subnets }}"
+  when: "{{ project.subnets is defined }}"
+
+- name: retrieve [SUBNETS]..
+  ec2_vpc_subnet_facts:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{ project.region }}"
+  register: subnet_list
+
+
+- name: debut routes now...
+  debug:
+    msg: "{{ [item[1].id if {'name':item[1].tags.Name} in item[0].subnets else '']}}"
+  with_nested:
+    - "{{ project.route_tables }}"
+    - "{{ subnet_list.subnets }}"
+
+#
+#- set_fact:
+#        userslist: "{{ userslist|default([])|union([{'name': item.0.name, 'uid': item.0.uid, 'host': item.1.host}]) }}"
+#      with_subelements:
+#        - users
+#        - hosts
+
+
+
+
+
+
+#- name: debug... dict 324
+#  debug:
+#    msg: >-
+#      {% set routes=[] -%}
+#      {% for r in item[0].routes -%}
+#      - {{ {'dest': r.dest , r.type: r.id} }}
+#      {% endfor -%}
+#  with_nested:
+#    - "{{ project.route_tables }}"
+#    - "{{ subnet_list.subnets }}"
+
+- name: setup [VPC][SECURITY - GROUP] ...
+  ec2_group:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    name: "{{ item.name }}"
+    description: "{{ item.description }}"
+    vpc_id: "{{ vpcObj.id }}"
+    region: "{{ project.region }}"
+    rules: "{{ item.rules }}"
+  with_items: "{{ project.security_group }}"
+  when: "{{ project.security_group is defined  }}"
+
+- name: setup [VPC][ROUTE - TABLES]..
+  ec2_vpc_route_table:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    vpc_id: "{{ vpcObj.id }}"
+    region: "{{ project.region }}"
+    tags: "{{ item[0].resource_tags }}"
+    subnets: "{{ [item[1].id if {'name':item[1].tags.Name} in item[0].subnets else '']}}"
+    routes: "{{ item[0].routes }}"
+  register: public_route_table
+  #with_items: "{{ project.route_tables }}"
+  with_nested:
+    - "{{ project.route_tables }}"
+    - "{{ subnet_list.subnets }}"
+  when: "{{ {'name':item[1].tags.Name} in item[0].subnets and project.route_tables is defined  }}"
+
+
+

@@ -1,0 +1,117 @@
+---
+
+## STANDARD EC2 startup
+
+- name: LAUNCH  [EC2] NO userData / Bootstrap
+  ec2:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+    instance_tags:
+      Name: "{{ item.name }}"
+      DIVISION: "{{ item.division }}"
+    count_tag: "{{ item.count_tag }}"
+    exact_count: "{{ item.exact_count }}"
+    spot_price: "{{ item.spot_price }}"
+    spot_wait_timeout: "{{ item.spot_wait_timeout }}"
+    keypair: "{{ item.key_name }}"
+    group_id: "{{ item.group_id }}"
+    instance_type: "{{ item.instance_type }}"
+    instance_profile_name: "{{ item.iam_role }}"
+    image: "{{ item.ami }}"
+    wait: "{{ item.wait }}"
+    vpc_subnet_id: "{{ item.vpc_subnet_id }}"
+    assign_public_ip: "{{ item.assign_public_ip }}"
+  with_items: "{{ project.ec2 }}"
+  when: '{{ item.ami is defined and item.vpc_subnet_id is defined and item.user_data is not defined and item.spot_price is defined}}'
+
+- name: LAUNCH  [EC2] NO userData / Bootstrap on -DEMAND
+  ec2:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+    instance_tags:
+      Name: "{{ item.name }}"
+      DIVISION: "{{ item.division }}"
+    count_tag: "{{ item.count_tag }}"
+    exact_count: "{{ item.exact_count }}"
+    keypair: "{{ item.key_name }}"
+    group_id: "{{ item.group_id }}"
+    instance_type: "{{ item.instance_type }}"
+    instance_profile_name: "{{ item.iam_role }}"
+    image: "{{ item.ami }}"
+    wait: "{{ item.wait }}"
+    vpc_subnet_id: "{{ item.vpc_subnet_id }}"
+    assign_public_ip: "{{ item.assign_public_ip }}"
+  with_items: "{{ project.ec2 }}"
+  when: '{{ item.ami is defined and item.vpc_subnet_id is defined and item.user_data is not defined and item.spot_price is not defined}}'
+
+
+
+- name: LAUNCH  [EC2]  WITH userData / Bootstrap w/ SPOT
+  ec2:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+    instance_tags:
+      Name: "{{ item.name }}"
+      DIVISION: "{{ item.division }}"
+    count_tag: "{{ item.count_tag }}"
+    exact_count: "{{ item.exact_count }}"
+    spot_price: "{{ item.spot_price }}"
+    spot_wait_timeout: "{{ item.spot_wait_timeout }}"
+    user_data: "{{ lookup('file', item.user_data) }}"
+    keypair: "{{ item.key_name }}"
+    group_id: "{{ item.group_id }}"
+    instance_type: "{{ item.instance_type }}"
+    instance_profile_name: "{{ item.iam_role }}"
+    image: "{{ item.ami }}"
+    wait: "{{ item.wait }}"
+    vpc_subnet_id: "{{ item.vpc_subnet_id }}"
+    assign_public_ip: "{{ item.assign_public_ip }}"
+  with_items: "{{ project.ec2 }}"
+  when: '{{ item.ami is defined and item.vpc_subnet_id is defined and item.user_data is defined and item.spot_price is defined}}'
+
+
+- name: LAUNCH  [EC2]  WITH userData / Bootstrap on- DEMAND
+  ec2:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+    instance_tags:
+      Name: "{{ item.name }}"
+      DIVISION: "{{ item.division }}"
+    count_tag: "{{ item.count_tag }}"
+    exact_count: "{{ item.exact_count }}"
+    user_data: "{{ lookup('file', item.user_data) }}"
+    keypair: "{{ item.key_name }}"
+    group_id: "{{ item.group_id }}"
+    instance_type: "{{ item.instance_type }}"
+    instance_profile_name: "{{ item.iam_role }}"
+    image: "{{ item.ami }}"
+    wait: "{{ item.wait }}"
+    vpc_subnet_id: "{{ item.vpc_subnet_id }}"
+    assign_public_ip: "{{ item.assign_public_ip }}"
+  with_items: "{{ project.ec2 }}"
+  when: '{{ item.ami is defined and item.vpc_subnet_id is defined and item.user_data is defined and item.spot_price is not defined}}'
+
+
+- name: KILL  [EC2]  WITH userData / Bootstrap
+  ec2:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+    state: "{{ item.state }}"
+    instance_ids: "{{ item.ec2IDs }}"
+  with_items: "{{ project.ec2 }}"
+  when: '{{ item.state != "present" }}'
+
+
+#domain auto join http://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-join-aws-domain.html
+#AD.json /CiCdTemplates/Templates/docker/ansible/ad-join-ssm.json
+

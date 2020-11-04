@@ -1,0 +1,25 @@
+---
+# This playbook deploys a specific MODELS FOR API set given the properties found
+- name: update/EXISTS  B A S I C [API authorizer] with description
+  cr_api_authorizer:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    state: "{{ item.state }}"
+    name: "{{ item.name }}" 
+    restApiId: null
+    apiName: "{{ item.apiName }}"  
+    providerARNs: "{{ item.providerARNs | default('') }}"
+    type: "{{ item.type }}"  
+    authType: "{{ item.authType }}"  
+    authorizerUri: "{{ item.authorizerUri | default('') }}"  
+    authorizerCredentials: "{{ item.authorizerCredentials | default('') }}"  
+    identitySource: "{{ item.identitySource }}"  
+    authorizerResultTtlInSeconds: "{{ item.authorizerResultTtlInSeconds | default('') }}"     
+  with_items: "{{ project.api_authorizers }}"
+  register: api_authresults
+  when: project.api_authorizers is defined
+
+
+
+

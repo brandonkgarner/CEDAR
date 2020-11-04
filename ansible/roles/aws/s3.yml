@@ -1,0 +1,89 @@
+
+
+# Create a bucket, add a policy from a file, enable requester pays, enable versioning and tag
+
+- name: s3_buckets & policy & versioning
+  s3_bucket:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    state: "{{ item.state }}"
+    policy: "{{ item.policy_file }}"
+    versioning: "{{ item.versioning }}"
+  with_items: "{{ project.buckets }}"
+  register: s3_policy_version
+  when: item.policy_file is defined and item.versioning is defined
+
+- name: s3_buckets & policy
+  s3_bucket:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    state: "{{ item.item.state }}"
+    policy: "{{ item.item.policy_file }}"
+  when: "{{item.changed == false and item.item.policy_file is defined}}"
+  with_items: "{{ s3_policy_version.results }}"
+
+- name: s3_buckets & versioning
+  s3_bucket:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    state: "{{ item.item.state }}"
+    versioning: "{{ item.item.versioning }}"
+  when: item.changed == false and item.item.versioning is defined
+  with_items: "{{ s3_policy_version.results }}"
+
+
+- name: "{{ ';'.join(p.name for p in project.buckets) }}"
+  s3:
+    bucket:  "{{ged_swagger_definition_bucket}}"
+    object:  "{{ged_api_swagger_filename}}"
+    src:  "files/{{ged_api_swagger_filename}}"
+    mode:  put
+  with_items: "{{ project.buckets }}"
+  when: (s3_policy_version is defined) and (item.svc is defined)
+
+
+- name: event[S3][lambda] adding Trigger w/ FILTER
+  cr_lambda_event:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    state: "{{ item.state }}"
+    event_source: s3
+    function_name: "{{ item.lambdaArn }}"
+    source_params:
+      id: "{{ item.Id }}"
+      bucket: "{{ item.bucket }}"
+      prefix: "{{ item.filter.prefix }}"
+      suffix: "{{ item.filter.suffix }}"
+      events: "{{ item.events }}"
+  with_items: "{{ project.buckets }}"
+  when: item.filter is defined
+  register: s3_filters
+
+- name: event[S3][lambda] adding Trigger
+  cr_lambda_event:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    state: "{{ item.state }}"
+    event_source: s3
+    function_name: "{{ item.lambdaArn }}"
+    #alias: "{{ item.alias }}"
+    source_params:
+      id: "{{ item.Id }}"
+      bucket: "{{ item.bucket }}"
+      # prefix: twitter
+      # suffix: log
+      events: "{{ item.events }}"
+  with_items: "{{ project.buckets }}"
+  when: (s3_filters.changed != True) and item.events is defined 
+
+
+
+
+
+
+

@@ -1,0 +1,146 @@
+---
+# Dynamo Facts, warning and import
+
+#### READING FACTS BELOW without key filter
+- name: dynamo cd facts check to file w/o key filter
+  cd_dynamo_facts:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+    level: "{{item.level}}"
+    recurse: "{{item.recurse}}"
+    output_file: "{{item.output_file}}"
+    output_type: "{{ item.output_type }}"
+    playbook_dir: "{{ playbook_dir }}"
+  register: dynamofact
+  with_items: "{{ project.dynamodb }}"
+  when: "{{ item.output_file is defined and item.state=='facts' and item.key_filter is not defined item.recurse is False  }}"
+
+- name: dynamo cd facts check to STDR I/O  w/o key filter
+  cd_dynamo_facts:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+    level: "{{item.level}}"
+    recurse: "{{item.recurse}}"
+    playbook_dir: "{{ playbook_dir }}"
+  register: dynamoResults2
+  with_items: "{{ project.dynamodb }}"
+  when: "{{ item.output_file is not defined and item.state=='facts' and item.key_filter is not defined and item.recurse is False }}"
+  #### READING with  SPECIFIC RECORD NUMBERS
+- name: dynamo cd facts check to file
+  cd_dynamo_facts:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+    level: "{{item.level}}"
+    recurse: "{{item.recurse}}"
+    document_limit: "{{ item.document_limit }}"
+    output_file: "{{item.output_file}}"
+    output_type: "{{ item.output_type }}"
+    playbook_dir: "{{ playbook_dir }}"
+  register: dynamofact
+  with_items: "{{ project.dynamodb }}"
+  when: "{{ item.output_file is defined and item.state=='facts' and item.key_filter is not defined item.recurse is True  }}"
+
+- name: dynamo cd facts check to STDR I/O
+  cd_dynamo_facts:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+    level: "{{item.level}}"
+    recurse: "{{item.recurse}}"
+    document_limit: "{{ item.document_limit }}"
+    playbook_dir: "{{ playbook_dir }}"
+  register: dynamoResults2
+  with_items: "{{ project.dynamodb }}"
+  when: "{{ item.output_file is not defined and item.state=='facts' and item.key_filter is not defined and item.recurse is True }}"
+
+#### READING FACTS BELOW WITH key filter
+- name: dynamo cd import for specific key to read
+  cd_dynamo_facts:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+    level: "{{item.level}}"
+    recurse: "{{item.recurse}}"
+    output_file: "{{item.output_file}}"
+    output_type: "{{ item.output_type }}"
+    key_filter: "{{ item.key_filter }}"
+    key_filter_value: "{{ item.key_filter }}"
+    playbook_dir: "{{ playbook_dir }}"
+  register: dynamoResults1b
+  with_items: "{{ project.dynamodb }}"
+  when: "{{ item.output_file is defined and item.state=='facts' and item.key_filter is defined  }}"
+
+- name: dynamo cd facts check to STDR I/O for specific key to read
+  cd_dynamo_facts:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{ project.region }}"
+    level: "{{ item.level }}"
+    recurse: "{{ item.recurse }}"
+    key_filter: "{{ item.key_filter }}"
+    key_filter_value: "{{ item.key_filter }}"
+    playbook_dir: "{{ playbook_dir }}"
+  register: dynamoResults2b
+  with_items: "{{ project.dynamodb }}"
+  when: "{{ item.output_file is not defined and item.state=='facts' and item.key_filter is defined  }}"
+
+#######################################################################
+########### IMPORT DATA FROM DOCUMENT INTO DYNAMO #####################
+#######################################################################
+
+- name: dynamo cd import DATA from FILE import all on level
+  cd_dynamo_set:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{ project.region }}"
+    level: "{{ item.level }}"
+    recurse: "{{ item.recurse }}"
+    load_from: "{{ item.load_from }}"
+    playbook_dir: "{{ playbook_dir }}"
+  register: dynamoResults3
+  with_items: "{{ project.dynamodb }}"
+  when: "{{  item.state!='facts' and item.key_filter is not defined  and item.crypto_table_keys is not defined}}"
+
+- name: dynamo cd import DATA from FILE import document using filter
+  cd_dynamo_set:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{ project.region }}"
+    level: "{{ item.level }}"
+    recurse: "{{ item.recurse }}"
+    key_filter: "{{ item.key_filter }}"
+    key_filter_value: "{{ item.key_filter }}"
+    load_from: "{{ item.load_from }}"
+    playbook_dir: "{{ playbook_dir }}"
+  register: dynamoResults3
+  with_items: "{{ project.dynamodb }}"
+  when: "{{  item.state!='facts' and item.key_filter is defined  and item.crypto_table_keys is not defined and level == 'document'}}"
+
+- name: dynamo cd import DATA from FILE import document using filter and crypto
+  cd_dynamo_set:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{ project.region }}"
+    level: "{{ item.level }}"
+    recurse: "{{ item.recurse }}"
+    key_filter: "{{ item.key_filter }}"
+    key_filter_value: "{{ item.key_filter }}"
+    crypto_table_keys: "{{ item.crypto_table_keys }}"
+    crypto_solution_keys: "{{ item.crypto_solution_keys }}"
+    load_from: "{{ item.load_from }}"
+    playbook_dir: "{{ playbook_dir }}"
+  register: dynamoResults3
+  with_items: "{{ project.dynamodb }}"
+  when: "{{  item.state!='facts' and item.key_filter is defined  and item.crypto_table_keys is defined and level == 'document' and item.crypto_table_keys is defined}}"

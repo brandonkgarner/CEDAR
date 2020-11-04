@@ -1,0 +1,13 @@
+---
+- name: S3 TEST  PUT operation (per file 4 order) {{ project_local.bucket | default("s3") }}
+  aws_s3:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    bucket: "{{ project_local.bucket }}"
+    object: "{{ project_local.target }}/{{ item | basename }}"
+    src: "{{ item }}"
+    mode: put
+  with_items: "{{ project_local.files }}"
+  register: s3_result
+  when: 'project_local.action == "upload"'

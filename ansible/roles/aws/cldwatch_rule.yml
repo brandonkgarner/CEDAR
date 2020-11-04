@@ -1,0 +1,15 @@
+
+
+# Create a cloudwatch rule, add a policy from a file, enable requester pays, enable versioning and tag
+#  "cron(5 minutes)"
+- cloudwatchevent_rule:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    name: "{{ item.name }}"
+    schedule_expression: "{{ item.schedule_expression }}"
+    description: "{{ item.description }}"
+    state: "{{ item.state }}"
+    targets: "{{ item.targets }}"
+  with_items: "{{ project.cloud_rules }}"
+  register: cloud_rules

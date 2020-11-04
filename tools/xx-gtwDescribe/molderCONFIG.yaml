@@ -1,0 +1,33 @@
+
+target2Define:
+  account: '857906731263'
+  services_map: 'mapperEnv.yaml'
+  all: cr-stage
+  eID:  U--getyour--own=
+  role_definer: crossNADA
+  clientID: v3g59par76qs9fqqmeq6k0hko
+  userpoolID: us-east-1_jhW07UDf4
+  assume_role: True
+  role_TTL: 600
+  region: us-east-1
+  triggers:
+    - api
+    - s3
+    - cloudwatch
+
+
+
+accounts:
+  '857906731263':
+    all: cr-dev
+    title: CR-DEVELOPMENT
+    eID: U--getyour--own=
+    change: True
+    tagOverwrite: False
+    clientID: v3g59par76qs9fqqmeq6k0hko
+    userpoolID: us-east-1_jhW07UDf4
+    tagLabels:
+      - DIVISION
+      - Name
+      - APPLICATION
+    role: cross_deployers

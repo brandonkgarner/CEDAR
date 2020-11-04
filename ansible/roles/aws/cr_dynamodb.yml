@@ -1,0 +1,186 @@
+---
+
+## STANDARD EC2 startup
+
+- name: echo dynamodbs
+  debug: 
+    msg: "{{ project.dynamodbs }}"
+
+- name: Create [DynDB] table NO LSI and GSI w/out RANGE
+  dynamodb_table:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+    name: "{{ item.name }}"
+    state: "{{ item.state | default('present') }}"
+    hash_key_name: "{{ item.hash_key_name }}"
+    hash_key_type: "{{ item.hash_key_type }}"
+    read_capacity: "{{ item.read_capacity }}"
+    write_capacity: "{{ item.write_capacity }}"
+  with_items: "{{ project.dynamodbs }}"
+  when: item.hash_key_name is defined and not (item.range_key_type is defined) and not (item.indexes is defined) and (item.state!="absent")
+- name: Create [DynDB] table NO LSI and GSI w/ RANGE
+  dynamodb_table:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+    name: "{{ item.name }}"
+    state: "{{ item.state | default('present') }}"
+    hash_key_name: "{{ item.hash_key_name }}"
+    hash_key_type: "{{ item.hash_key_type }}"
+    range_key_name: "{{ item.range_key_name }}"
+    range_key_type: "{{ item.range_key_type }}"
+    read_capacity: "{{ item.read_capacity }}"
+    write_capacity: "{{ item.write_capacity }}"
+  with_items: "{{ project.dynamodbs }}"
+  when: (item.hash_key_name is defined and item.range_key_type is defined) and not (item.indexes is defined) and (item.state!="absent")
+
+- name: Create [DynDB] table LSI and GSI w/ RANGE
+  dynamodb_table:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+    name: "{{ item.name }}"
+    state: "{{ item.state | default('present') }}"
+    indexes: "{{item.indexes}}"
+    hash_key_name: "{{ item.hash_key_name }}"
+    hash_key_type: "{{ item.hash_key_type }}"
+    read_capacity: "{{ item.read_capacity }}"
+    write_capacity: "{{ item.write_capacity }}"
+  with_items: "{{ project.dynamodbs }}"
+  when: item.hash_key_name is defined and not (item.range_key_type is defined) and item.indexes is defined and not (item.state=="absent")
+
+- name: Create [DynDB] table LSI and GSI w/ RANGE
+  dynamodb_table:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+    name: "{{ item.name }}"
+    state: "{{ item.state | default('present') }}"
+    indexes: "{{item.indexes}}"
+    hash_key_name: "{{ item.hash_key_name }}"
+    hash_key_type: "{{ item.hash_key_type }}"
+    range_key_name: "{{ item.range_key_name }}"
+    range_key_type: "{{ item.range_key_type }}"
+    read_capacity: "{{ item.read_capacity }}"
+    write_capacity: "{{ item.write_capacity }}"
+  with_items: "{{ project.dynamodbs }}"
+  when: (item.hash_key_name is defined and item.range_key_type is defined) and item.indexes is defined and not (item.state=="absent")
+
+
+- name: Update [DynDB] Capacity on table
+  dynamodb_table:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+    name: "{{ item.name }}"
+    state: "{{ item.state | default('present') }}"
+    read_capacity: "{{ item.read_capacity }}"
+    write_capacity: "{{ item.write_capacity }}"
+  with_items: "{{ project.dynamodbs }}"
+  when: item.hash_key_name is not defined and item.read_capacity is defined and not (item.state=="absent")
+
+
+
+- name: ENABLED [DynDB] streams TABLE update
+  cr_dynamo_event:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+    state: "{{ item.state | default('present') }}"
+    TableName: "{{item.name}}"
+    Enabled: "{{item.streamspec.StreamEnabled}}"
+    StreamViewType: "{{ item.streamspec.StreamViewType }}"
+  with_items: "{{ project.dynamodbs }}"
+  when: item.streamspec is defined 
+
+
+- name: FACTS [DynDB] event TABLE update
+  cr_dynamo_stream_facts:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+    target: "dynamodb"
+    triggers:  "{{project.dynamo_triggers}}"
+  register: dynamodb_streams
+  when: project.dynamo_triggers is defined
+
+
+
+- name: DELETE [DynDB] stream event 
+  lambda_event:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+    state: "absent"
+    event_source: "{{ item['event_source'] }}"
+    function_name: "{{ item['function_arn'] }}"
+    # alias: Dev
+    source_params:
+      source_arn: "{{ item['source_params']['source_arn'] }}"
+      enabled: "{{ item['source_params']['enabled'] }}"
+      batch_size:  "{{ item['source_params']['batch_size'] }}"
+      starting_position: "{{ item['source_params']['starting_position'] }}"
+  with_items: "{{ dynamodb_streams['entities'] }}"
+  when: dynamodb_streams['entities'] is defined
+
+- name: MAP [DynDB] stream event 
+  cr_lambda_triggers:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+    state: "{{ item.state | default('present') }}"
+    event_source: "{{ item['event_source'] }}"
+    function_name: "{{ item['function_arn'] }}"
+    # alias: Dev
+    source_params:
+      source_arn: "{{ item['source_params']['source_arn'] }}"
+      enabled: "{{ item['source_params']['enabled'] }}"
+      batch_size:  "{{ item['source_params']['batch_size'] }}"
+      starting_position: "{{ item['source_params']['starting_position'] }}"
+      MaximumBatchingWindowInSeconds: "{{ item['source_params']['MaximumBatchingWindowInSeconds']  | default(0)}}"
+      ParallelizationFactor: "{{ item['source_params']['ParallelizationFactor']  | default(0)}}"
+      DestinationConfig: "{{ item['source_params']['DestinationConfig']  | default(0)}}"
+      MaximumRecordAgeInSeconds: "{{ item['source_params']['MaximumRecordAgeInSeconds']  | default(0)}}"
+      BisectBatchOnFunctionError: "{{ item['source_params']['BisectBatchOnFunctionError']  | default(0)}}"
+      MaximumRetryAttempts: "{{ item['source_params']['MaximumRetryAttempts']  | default(0)}}"
+      StartingPositionTimestamp: "{{ item['source_params']['StartingPositionTimestamp']  | default(0)}}"
+  with_items: "{{ dynamodb_streams['entities'] }}"
+  when: dynamodb_streams['entities'] is defined
+
+
+    # indexes:
+    #   - name: NamedIndex
+    #     type: global_include
+    #     hash_key_name: id
+    #     range_key_name: create_time
+    #     includes:
+    #       - other_field
+    #       - other_field2
+    #     read_capacity: 10
+    #     write_capacity: 10
+    #     
+    #     
+- name: DELETE [DynDB] GSI on table
+  dynamodb_table:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+  with_items: "{{ project.dynamodbs }}"
+  when: item.indexes is defined and item.state=="absent"
+
+#domain auto join http://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2-join-aws-domain.html
+#AD.json /CiCdTemplates/Templates/docker/ansible/ad-join-ssm.json
+

@@ -1,0 +1,35 @@
+---
+# This playbook deploys the whole application stack in this site.
+
+- name: execute[lambda] (w/ ENV variables) {{ project_local.target | default("lambda") }}
+  cd_lambda_invoke:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    function_name: "{{ project_local.target }}"
+    payload: "{{ item }}"
+    invocation_type: "{{ project_local.invocation_type | default('Event') }}"
+    timeout: "{{ project_local.timeout | default(0) }}"
+    assert_key: "{{ project_local.result.key | default('')}}"
+    assert_result: "{{ project_local.result.value | default('') }}"
+    environment_variables: "{{project_local.environ_override}}"
+  with_items: "{{ project_local.payloads }}"
+  register: wEnv
+  when: (project_local.environ_override is defined and project_local.action == "invoke")
+
+# error_path: "{{ project_local.error_path | default('') }}"
+
+- name: execute[lambda] (withOUT NO!! ENV variables) {{ project_local.target | default("lambda") }}
+  cd_lambda_invoke:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    function_name: "{{ project_local.target }}"
+    payload: "{{ item }}"
+    invocation_type: "{{ project_local.invocation_type | default('Event') }}"
+    timeout: "{{ project_local.timeout | default(0) }}"
+    assert_key: "{{ project_local.result.key | default('')}}"
+    assert_result: "{{ project_local.result.value | default('') }}"
+  with_items: "{{ project_local.payloads }}"
+  register: wEnv
+  when: (project_local.environ_override is undefined and project_local.action == "invoke")

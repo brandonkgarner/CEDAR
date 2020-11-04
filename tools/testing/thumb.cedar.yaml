@@ -1,0 +1,47 @@
+---
+pre:
+  action: upload
+  service: s3
+  bucket: beto-dev-portal
+  target: v3/testupload
+  local_path: '.'
+  files:
+    - files/filetest001.pdf #'{{ role_path }}/files/filetest001.pdf'
+    - files/filetest002.pdf
+    - files/filetest003.pdf
+run:
+  action: invoke
+  service: lambda
+  target: CN-FileTrans
+  environ_override:
+    origin_path: v3/testupload
+    final_path: v3/testpreview
+  payloads:
+    - files/filetest001.json
+    - files/filetest002.json
+    - files/filetest003.json
+  result: 
+    key: success
+    value: true
+assert:
+  action: get
+  service: s3
+  bucket: beto-dev-portal
+  target: v3/testpreview
+  local_path: '.'
+  file:
+    - filetest001_preview.pdf
+    - filetest002_preview.pdf
+    - filetest003_preview.pdf
+  exists: true
+post:
+  action: delete
+  service: s3
+  bucket: beto-dev-portal
+  files:
+    - v3/testupload/filetest001.pdf
+    - v3/testpreview/filetest001_preview.pdf
+    - v3/testupload/filetest002.pdf
+    - v3/testpreview/filetest002_preview.pdf
+    - v3/testupload/filetest003.pdf
+    - v3/testpreview/filetest003_preview.pdf

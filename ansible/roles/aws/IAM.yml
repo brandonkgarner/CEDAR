@@ -1,0 +1,46 @@
+---
+
+
+# Create a bucket, add a policy from a file, enable requester pays, enable versioning and tag
+
+- name: role_policies [IAM] ensure state is correct
+  cr_iam_set:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+    description: "{{ item.state }}"
+    iam_type: "{{ item.type }}"
+    action_policy_filepath: "{{ item.policy_document }}"
+  with_items: "{{ project.policies }}"
+
+
+
+#ONLY AFTER POLICIES are DEFINED CAN we CREATE ROLES OR USERS OR GROUPS
+- name: roles FINAL [IAM] ensure state is correct
+  cr_iam_set:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+    description: "{{ item.state }}"
+    action_policy_labels: "{{ item.action_policy_labels }}"
+    iam_type: "{{ item.type }}"
+    trust_policy_filepath: "{{ item.trust_policy_filepath }}"
+  with_items: "{{ project.roles }}"
+
+
+#### ONLY FOR FACTS on users roles or groups
+- name: Roles exist given policy
+  cr_iam_facts:
+    name: "{{ item.name }}"
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+  with_items: "{{ project.roles }}"
+
+
+
+

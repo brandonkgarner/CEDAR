@@ -1,0 +1,81 @@
+---
+
+- name: assume [STS] role for cross account deployment cross_acct_role
+  sts_assume_role:
+    role_arn: "arn:aws:iam::{{ project.account_id }}:role/{{ project.cross_acct_role }}"
+    role_session_name: "cross_acct_role"
+    external_id: "{{ project.eid }}"
+    region: "{{ project.region }}"
+    duration_seconds: "{{ project.role_duration }}"
+  register: assumed_role
+  when: "project.cross_acct_role is defined and not aws_token is defined"
+
+
+
+- name: get [STS] tokens for current user/role, for single accounts embedded
+  sts_session_token:
+    duration_seconds: "{{ project.role_duration }}"
+  register: assumed_role_local
+  when: "assumed_role.changed != True and not aws_token is defined"
+
+
+- name: get [STS] tokens for current user/role, for single accounts
+  sts_session_token:
+    aws_access_key: "{{ aws_access_key_id }}"
+    aws_secret_key: "{{ aws_secret_access_key }}"
+    region: "{{ region }}"
+    duration_seconds: "{{ project.role_duration }}"
+  register: assumed_role_manual
+  when: "not assumed_role_local.changed and assumed_role.changed != True and not aws_token is defined"
+
+
+
+- name: print [STS] access if given
+  command: echo 'Role in {{ project.account_id }} this is your access{{access}}'
+  when: 'access is defined and not aws_token is defined'
+
+
+- name: set [STS]credentials from STS call local
+  set_fact:
+    access: null
+    secret: null
+    token: null
+  when: "assumed_role_local.changed == True"
+
+
+- name: set [STS] credentials from CROSS STS call
+  set_fact:
+    access: "{{  assumed_role.sts_creds.access_key }}"
+    secret: "{{  assumed_role.sts_creds.secret_key }}"
+    token: "{{  assumed_role.sts_creds.session_token }}"
+  when: "assumed_role.changed == True"
+
+
+- name: set [STS] credentials call from manual keys
+  set_fact:
+    access: "{{  assumed_role_manual.sts_creds.access_key }}"
+    secret: "{{  assumed_role_manual.sts_creds.secret_key }}"
+    token: "{{  assumed_role_manual.sts_creds.session_token }}"
+  when: "assumed_role_manual.changed == True"
+
+- name: set [STS]  with pass through based on GIVEN TOKEN SESSION
+  set_fact:
+    access: "{{  aws_access_key_id }}"
+    secret: "{{  aws_secret_access_key }}"
+    token: "{{  aws_token }}"
+  when: "aws_token is defined"
+
+
+- name: cross policy [STS] is local?? set in config
+  command: echo '  --> USING LOCAL .aws Config and Credentials!!!!!'
+  when: "assumed_role.changed != True and assumed_role_manual.changed != True and aws_token is not defined"
+
+- name: cross policy [STS] is local?? set in MAnUALLY
+  command: echo '.....  --> USING PROVIDED STS RESULTS MANuALLy ..!!!!!'
+  when: "aws_token is  defined"
+
+
+
+
+
+

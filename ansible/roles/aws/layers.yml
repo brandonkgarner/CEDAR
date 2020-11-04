@@ -1,0 +1,19 @@
+---
+# This playbook deploys the whole application stack in this site.
+
+- name: [LAYER] lambda  state VALIDATE
+  lambda:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+    version: "{{ item.version }}"
+    arn: "{{ item.arn }}"
+    version_arn: "{{ item.version_arn }}"
+    runtimes: "{{ item.runtimes }}"
+    license: "{{ item.license }}"
+    state: "{{ item.state }}"
+    zip_file: "{{ item.zip_file }}"
+    description: "{{ item.description }}"
+  with_items: "{{ project.lambda_layers }}"

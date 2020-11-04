@@ -1,0 +1,61 @@
+---
+
+- name: assume [STS] role for cross account deployment cross_acct_role
+  sts_assume_role:
+    role_arn: "arn:aws:iam::{{ project.account_id }}:role/{{ project.cross_acct_role }}"
+    role_session_name: "cross_acct_role"
+    external_id: "{{ project.eid }}"
+    region: "{{ project.region }}"
+    duration_seconds: "{{ project.role_duration }}"
+  register: assumed_role
+  when: "{{ project.cross_acct_role is defined }}"
+
+
+- name: get [STS] tokens for current user/role, for single accounts
+  sts_session_token:
+    duration_seconds: "{{ project.role_duration }}"
+  register: assumed_role_local
+  when: "{{ project.cross_acct_role is not defined }}"
+
+
+- name: print [STS] access if given
+  command: echo 'Role in {{ project.account_id }} this is your access{{access}}'
+  when: '{{ access is defined }}'
+#
+#- name: set [STS]credentials from STS call local
+#  set_fact:
+#    access: "{{  assumed_role_local.sts_creds.access_key }}"
+#    secret: "{{  assumed_role_local.sts_creds.secret_key }}"
+#    token: "{{  assumed_role_local.sts_creds.session_token }}"
+#  when: "{{ assumed_role_local.changed == True }}"
+
+- name: set [STS]credentials from STS call local
+  set_fact:
+    access: null
+    secret: null
+    token: null
+  when: "{{ assumed_role_local.changed == True }}"
+
+
+- name: set [STS] credentials from CROSS STS call
+  set_fact:
+    access: "{{  assumed_role.sts_creds.access_key }}"
+    secret: "{{  assumed_role.sts_creds.secret_key }}"
+    token: "{{  assumed_role.sts_creds.session_token }}"
+  when: "{{ assumed_role.changed == True }}"
+
+- name: cross policy [STS] is local?? set in config
+  command: echo '  --> USING LOCAL .aws Config and Credentials!!!!!'
+  when: "{{ assumed_role.changed != True }}"
+
+#- name: hello [STS] world the command template
+#  command: echo 'hello world --region {{ project.region }}'
+#  environment:
+#    AWS_ACCESS_KEY_ID: "{{ access }}"
+#    AWS_SECRET_ACCESS_KEY: "{{ secret }}"
+#    AWS_SECURITY_TOKEN: "{{ token }}"
+
+
+
+
+

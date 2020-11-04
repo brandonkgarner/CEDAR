@@ -1,0 +1,39 @@
+---
+# This playbook deploys triggers for lambda
+
+- name: event[lambda] adding Trigger for dynamodb
+  cr_lambda_triggers:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    region: "{{project.region}}"
+    state: "{{ item.state | default('present') }}"
+    event_source: "{{ item['event_source'] }}"
+    function_name: "{{ item['function_arn'] }}"
+    # alias: Dev
+    source_params:
+      source_arn: "{{ item['source_params']['source_arn'] }}"
+      enabled: "{{ item['source_params']['enabled'] }}"
+      batch_size:  "{{ item['source_params']['batch_size'] }}"
+      starting_position: "{{ item['source_params']['starting_position'] }}"
+      MaximumBatchingWindowInSeconds: "{{ item['source_params']['MaximumBatchingWindowInSeconds']  | default(0)}}"
+      ParallelizationFactor: "{{ item['source_params']['ParallelizationFactor']  | default(0)}}"
+      DestinationConfig: "{{ item['source_params']['DestinationConfig']  | default(0)}}"
+      MaximumRecordAgeInSeconds: "{{ item['source_params']['MaximumRecordAgeInSeconds']  | default(0)}}"
+      BisectBatchOnFunctionError: "{{ item['source_params']['BisectBatchOnFunctionError']  | default(0)}}"
+      MaximumRetryAttempts: "{{ item['source_params']['MaximumRetryAttempts']  | default(0)}}"
+      StartingPositionTimestamp: "{{ item['source_params']['StartingPositionTimestamp']  | default(0)}}"
+  with_items: "{{ project.triggers_dynamo }}"
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,29 @@
+---
+
+# Create a bucket, add a policy from a file, enable requester pays, enable versioning and tag
+
+- name: cloudformation [CF] execution
+  cloudformation:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    stack_name: "{{ item.name }}"
+    state: "{{ item.state }}"
+    region: "{{ project.region }}"
+    disable_rollback: "{{ item.disable_rollback }}"
+    template: "{{item.template}}"
+    template_parameters: "{{ item.params }}"
+    tags:
+      Stack: "{{ item.name }}"
+  with_items: "{{ project.cloudformation }}"
+  when: "{{ item.type == 'CF' if project.cloudformation is defined else False }}"
+
+
+- name: cloudformation [SAM] execution
+  command: 'aws cloudformation deploy --stack-name {{ item.name }} --template-file {{item.template}} --region {{ project.region }}'
+  environment:
+    AWS_ACCESS_KEY_ID: "{{ access }}"
+    AWS_SECRET_ACCESS_KEY: "{{ secret }}"
+    AWS_SECURITY_TOKEN: "{{ token }}"
+  with_items: "{{ project.cloudformation }}"
+  when: "{{ item.type == 'SAM' if project.cloudformation is defined else False }}"

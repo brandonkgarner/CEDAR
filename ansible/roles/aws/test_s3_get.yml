@@ -1,0 +1,26 @@
+---
+- name: S3 TEST  GET specific object w/ localpath(per file 4 order). {{ project_local.bucket | default("s3") }}
+  aws_s3:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    bucket: "{{ project_local.bucket }}"
+    object: "{{ project_local.target }}/{{ item }}"
+    dest: "{{ project_local.local_path }}/{{ item }}"
+    mode: get
+  with_items: "{{ project_local.files }}"
+  register: s3_result
+  when: 'project_local.action == "get" and project_local.local_path is defined'
+
+- name: S3 TEST  GET a specific object w NO localpath(per file 4 order). {{ project_local.bucket | default("s3") }}
+  aws_s3:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    bucket: "{{ project_local.bucket }}"
+    object: "{{ project_local.target }}/{{ item }}"
+    dest: "{{ item }}"
+    mode: get
+  with_items: "{{ project_local.files }}"
+  register: s3_result
+  when: 'project_local.action == "get" and project_local.local_path is undefined'

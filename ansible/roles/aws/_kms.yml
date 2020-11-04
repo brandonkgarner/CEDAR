@@ -1,0 +1,16 @@
+---
+# This playbook deploys the whole application stack in this site.
+
+- name: kms test
+  cd_kms_facts:
+    region: "{{project.region}}"
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+
+- name: create [KMS] key for encryption
+  cd_kms:
+    name: "{{ item.name }}"
+    region: "{{project.region}}"
+    state: "{{ item.state }}"
+  with_items: "{{ project.vpcs }}"

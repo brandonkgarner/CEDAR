@@ -1,0 +1,89 @@
+{
+
+  "values": {
+    "myDDBRegion": "us-west-2",
+    "myDDBTableName": "vos-student-call-data",
+    "myDDBWriteThroughputRatio": "0.25",
+    "myInputS3Loc": "s3://patty-download/"
+  },
+  "objects": [
+    {
+      "output": {
+        "ref": "DDBDestinationTable"
+      },
+      "input": {
+        "ref": "S3InputDataNode"
+      },
+      "maximumRetries": "2",
+      "name": "TableLoadActivity",
+      "step": "s3://dynamodb-emr-#{myDDBRegion}/emr-ddb-storage-handler/2.1.0/emr-ddb-2.1.0.jar,org.apache.hadoop.dynamodb.tools.DynamoDbImport,#{input.directoryPath},#{output.tableName},#{output.writeThroughputPercent}",
+      "runsOn": {
+        "ref": "EmrClusterForLoad"
+      },
+      "id": "TableLoadActivity",
+      "type": "EmrActivity",
+      "resizeClusterBeforeRunning": "true"
+    },
+    {
+      "failureAndRerunMode": "CASCADE",
+      "resourceRole": "DataPipelineDefaultResourceRole",
+      "role": "DataPipelineDefaultRole",
+      "pipelineLogUri": "s3://patty-download/",
+      "scheduleType": "ONDEMAND",
+      "name": "Default",
+      "id": "Default"
+    },
+    {
+      "writeThroughputPercent": "#{myDDBWriteThroughputRatio}",
+      "name": "DDBDestinationTable",
+      "id": "DDBDestinationTable",
+      "type": "DynamoDBDataNode",
+      "tableName": "#{myDDBTableName}"
+    },
+    {
+      "bootstrapAction": "s3://#{myDDBRegion}.elasticmapreduce/bootstrap-actions/configure-hadoop, --mapred-key-value,mapreduce.map.speculative=false",
+      "name": "EmrClusterForLoad",
+      "useOnDemandOnLastAttempt": "true",
+      "coreInstanceCount": "1",
+      "coreInstanceType": "m3.xlarge",
+      "amiVersion": "3.9.0",
+      "id": "EmrClusterForLoad",
+      "masterInstanceType": "m3.xlarge",
+      "region": "#{myDDBRegion}",
+      "type": "EmrCluster",
+      "terminateAfter": "30 Minutes"
+    },
+    {
+      "directoryPath": "#{myInputS3Loc}",
+      "name": "S3InputDataNode",
+      "id": "S3InputDataNode",
+      "type": "S3DataNode"
+    }
+  ],
+  "parameters": [
+    {
+      "description": "Input S3 folder",
+      "id": "myInputS3Loc",
+      "type": "AWS::S3::ObjectKey"
+    },
+    {
+      "description": "Target DynamoDB table name",
+      "id": "myDDBTableName",
+      "type": "String"
+    },
+    {
+      "default": "0.25",
+      "watermark": "Enter value between 0.1-1.0",
+      "description": "DynamoDB write throughput ratio",
+      "id": "myDDBWriteThroughputRatio",
+      "type": "Double"
+    },
+    {
+      "default": "us-east-1",
+      "watermark": "us-east-1",
+      "description": "Region of the DynamoDB table",
+      "id": "myDDBRegion",
+      "type": "String"
+    }
+  ]
+}

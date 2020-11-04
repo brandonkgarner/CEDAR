@@ -1,0 +1,162 @@
+---
+# This playbook deploys the whole application stack in this site.
+
+
+
+# Create a bucket, add a policy from a file, enable requester pays, enable versioning and tag
+
+# - name: ensure[lambda]  state is correct (with vpc and s3)
+#   lambda:
+#     aws_access_key: "{{ access }}"
+#     aws_secret_key: "{{ secret }}"
+#     security_token: "{{ token }}"
+#     name: "{{ item.name }}"
+#     state: "{{ item.state }}"
+#     s3_bucket: "{{ '/'.join(item.code_location.split('/')[:3]) }}"
+#     s3_key: "{{ '/'.join(item.code_location.split('/')[3:]) }}"
+#     runtime: "{{ item.runtime }}"
+#     role: "arn:aws:iam::{{ project.account_id }}:role/{{item.role}}"
+#     timeout: "{{ item.timeout }}"
+#     description: "{{ item.description }}"
+#     memory_size: "{{ item.memory_size }}"
+#     vpc_subnet_ids: "{{ item.vpc_subnet_ids }}"
+#     vpc_security_group_ids: "{{ item.vpc_security_group_ids }}"
+#   with_items: "{{ project.lambdas }}"
+#   when: (item.vpc_subnet_ids is defined) and ("s3://" in item.code_location)
+
+
+# - name: ensure[lambda]  state is correct (with s3)
+#   lambda:
+#     aws_access_key: "{{ access }}"
+#     aws_secret_key: "{{ secret }}"
+#     security_token: "{{ token }}"
+#     name: "{{ item.name }}"
+#     state: "{{ item.state }}"
+#     s3_bucket: "{{ '/'.join(item.code_location.split('/')[:3]) }}"
+#     s3_key: "{{ '/'.join(item.code_location.split('/')[3:]) }}"
+#     runtime: "{{ item.runtime }}"
+#     role: "arn:aws:iam::{{ project.account_id }}:role/{{item.role}}"
+#     timeout: "{{ item.timeout }}"
+#     description: "{{ item.description }}"
+#     memory_size: "{{ item.memory_size }}"
+#   with_items: "{{ project.lambdas }}"
+#   when: >
+#         's3://'|string in item.code_location
+
+
+- name: ensure(2)[lambda]  state is correct [VPC] (w/ ENV variables)
+  lambda:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+    zip_file: "{{ item.zip_file }}"
+    runtime: "{{ item.runtime }}"
+    role: "arn:aws:iam::{{ project.account_id }}:role/{{item.role}}"
+    timeout: "{{ item.timeout }}"
+    handler: "{{ item.handler }}"
+    description: "{{ item.description }}"
+    memory_size: "{{ item.memory_size }}"
+    environment_variables:  "{{ item.environment_variables }}"
+    vpc_subnet_ids: "{{ item.vpc_subnet_ids }}"
+    vpc_security_group_ids: "{{ item.vpc_security_group_ids }}"
+  with_items: "{{ project.lambdas }}"
+  register: wEnv
+  when: (item.vpc_subnet_ids is defined) and  (item.environment_variables is defined)
+
+
+- name: ensure[lambda]  state is correct (with vpc) N O!!  environment_variables
+  lambda:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+    zip_file: "{{ item.zip_file }}"
+    runtime: "{{ item.runtime }}"
+    role: "arn:aws:iam::{{ project.account_id }}:role/{{item.role}}"
+    timeout: "{{ item.timeout }}"
+    handler: "{{ item.handler }}"
+    description: "{{ item.description }}"
+    memory_size: "{{ item.memory_size }}"
+    vpc_subnet_ids: "{{ item.vpc_subnet_ids }}"
+    vpc_security_group_ids: "{{ item.vpc_security_group_ids }}"
+  with_items: "{{ project.lambdas }}"
+  register: wEnv
+  when: (item.vpc_subnet_ids is defined) and (wEnv.changed != True ) and (item.code_location is undefined) and (item.environment_variables is undefined)
+
+
+
+
+- name: ensure[lambda]  state is correct (w/ ENV variables)
+  lambda:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+    zip_file: "{{ item.zip_file }}"
+    runtime: "{{ item.runtime }}"
+    role: "arn:aws:iam::{{ project.account_id }}:role/{{item.role}}"
+    timeout: "{{ item.timeout }}"
+    handler: "{{ item.handler }}"
+    description: "{{ item.description }}"
+    memory_size: "{{ item.memory_size }}"
+    environment_variables:  "{{ item.environment_variables }}"
+  with_items: "{{ project.lambdas }}"
+  register: wEnv
+  when: (item.vpc_subnet_ids is undefined) and (wEnv.changed != True ) and (item.code_location is undefined) and (item.environment_variables is defined)
+
+
+
+
+- name: ensure[lambda]  state is correct (skip ENV variables)
+  lambda:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+    zip_file: "{{ item.zip_file }}"
+    runtime: "{{ item.runtime }}"
+    role: "arn:aws:iam::{{ project.account_id }}:role/{{item.role}}"
+    timeout: "{{ item.timeout }}"
+    handler: "{{ item.handler }}"
+    description: "{{ item.description }}"
+    memory_size: "{{ item.memory_size }}"
+  with_items: "{{ project.lambdas }}"
+  when: (item.vpc_subnet_ids is undefined) and (wEnv.changed != True ) and (item.code_location is undefined) and (item.environment_variables is undefined)
+
+
+# - name: event[lambda] adding Trigger
+#   lambda_event:
+#     aws_access_key: "{{ access }}"
+#     aws_secret_key: "{{ secret }}"
+#     security_token: "{{ token }}"
+#     state: "{{ item.state }}"
+#     event_source: stream
+#     function_name: "{{ function_name }}"
+#     alias: Dev
+#     source_params:
+#       source_arn: arn:aws:dynamodb:us-east-1:123456789012:table/tableName/stream/2016-03-19T19:51:37.457
+#       enabled: True
+#       batch_size: 100
+#       starting_position: TRIM_HORIZON
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,18 @@
+---
+# This playbook deploys the whole application stack in this site.
+- name: set project from vars vpc
+  set_fact:
+    project: "{{ GED }}"
+
+
+# ECS
+
+- name: roles ensure state is correct
+  iam:
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+    trust_policy_filepath: "{{ item.trust_policy_filepath }}"
+  with_items: "{{ project.vpcs }}"
+
+
+

@@ -1,0 +1,102 @@
+---
+# This playbook deploys a specific API set given the properties found
+- name: update/EXISTS [API] [RESOURCE] 
+  cr_apigw_set:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    apigw_type: "resource"
+    name: "{{ item.name }}"                 ##name of the API
+    path: "{{ item.path }}"                 ##FULL PATH of resource. use "/" for root
+    error_path: "{{ project.error_path | default('') }}"
+    state: "{{ item.state }}"
+  with_items: "{{ project.api_gw }}"
+  when: 'not project.skipping.resources'
+
+- name: update [API] [METHOD]
+  cr_apigw_set:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    apigw_type: "method"
+    name: "{{ item.name }}"                 ##name of the API
+    path: "{{ item.path }}"
+    error_path: "{{ project.error_path | default('') }}"
+    credentials:  "{{ item.credentials }}"
+    operationName: "{{ item.operational_name }}"
+    requestParameters: "{{ item.request_params }}"
+    requestValidator: "{{ item.request_valid }}"
+    requestModels: "{{ item.request_models }}"
+    responseModels: "{{ item.response_models }}"
+    authorizationScopes: "{{ item.auth_scope }}"
+    authName: "{{ item.authName | default('') }}"
+    apiKeyRequired: "{{ item.apiKeyRequired }}"
+    authorizationType: "{{ item.authorizationType }}"
+    httpMethod: "{{ item.httpMethod }}"      ##GET, POST, other...
+    state: "{{ item.state }}"
+    integration: "{{ item.method_integration }}"
+    response: "{{ item.method_response }}"
+  with_items: "{{ project.api_gw }}"
+  when: 'item.httpMethod != "OPTIONS" and not project.skipping.methods'
+
+
+- name: update [API] [OPTIONs]
+  cr_apigw_set:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    apigw_type: "method"
+    name: "{{ item.name }}"                 ##name of the API
+    path: "{{ item.path }}"
+    error_path: "{{ project.error_path | default('') }}"
+    credentials:  "{{ item.credentials }}"
+    operationName: "{{ item.operational_name }}"
+    requestParameters: "{{ item.request_params }}"
+    requestValidator: "{{ item.request_valid }}"
+    requestModels: "{{ item.request_models }}"
+    responseModels: "{{ item.response_models }}"
+    authorizationScopes: "{{ item.auth_scope }}"
+    authName: "{{ item.authName | default('') }}"
+    apiKeyRequired: "{{ item.apiKeyRequired }}"
+    authorizationType: "{{ item.authorizationType }}"
+    httpMethod: "{{ item.httpMethod }}"      ##GET, POST, other...
+    state: "{{ item.state }}"
+    integration: "{{ item.method_integration }}"
+    response: "{{ item.method_response }}"
+  with_items: "{{ project.api_gw }}"
+  when: 'item.httpMethod == "OPTIONS" and not project.skipping.options'
+
+
+- name: Deploy [API] [Stage]
+  cr_api_deploy_set:
+    aws_access_key: "{{ access }}"
+    aws_secret_key: "{{ secret }}"
+    security_token: "{{ token }}"
+    apigw_type: "deployment"
+    error_path: "{{ project.error_path | default('') }}"
+    name: "{{ item.api }}"                 ##name of the api
+    stageName: "{{ item.stage }}"
+    state: "{{ item.state }}"
+  with_items: "{{ project.api_stages }}"
+  when:  'not project.skipping.stage'
+
+
+                    # "name":name,
+                    # "description":description,
+                    # "stageDescription":stageDescription,
+                    # "stageName":stageName,
+                    # "cacheClusterEnabled":cacheClusterEnabled,
+                    # "cacheClusterSize":cacheClusterSize,
+                    # "variables":variables,
+                    # "tags":tags,
+                    # "documentationVersion":documentationVersion,
+                    # "canarySettings":canarySettings,
+                    # "resourceId": None,
+                    # "restApiId": None,
+                    # "apiStages": apiStages,
+                    # "throttle": throttle,
+                    # "quota":quota
+
+
+
+                  

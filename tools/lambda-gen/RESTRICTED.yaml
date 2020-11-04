@@ -1,0 +1,94 @@
+---
+services:
+  domains:
+    '000000000000':
+      portal: https://dev.xx.com
+    '000000000001':
+      portal: https://test.xx.com
+  slack:
+    '000000000000':
+      ocrChannel: xx-dev-ocr
+    '000000000001':
+      ocrChannel: xx-test-ocr
+  xact:
+    '000000000000':
+      crApi: "http://dev.xx.com"
+      api: "http://dev.xx.com/api/taskrunner/send/xact"
+      token: Bearer AAAxAx0AAxAxAxAAx0A
+    '000000000001':
+      crApi: "https://test.xx.com"
+      api: "https://test.xx.com/api/taskrunner/send/xact"
+      token: Bearer AAAxAx0AAxAxAxAAx0A
+  cognito:
+    '000000000000':
+      xx_clientID: x0x00xxx00xx0xxxxx0x0xxx
+      xx_userpoolID: us-east-1_xxA00AAx0
+      clientID: x0x00xxx00xx0xxxxx0x0xxx  # Not the same as above
+      secret: 0x0x0x0x0x0x0x0x0x0x0x0x0x0x0x0x0x0x0x0x0x
+      userpoolID: us-east-1_xxA00AAx0  # Not the same as above
+    '000000000001':
+      xx_clientID: x0x00xxx00xx0xxxxx0x0xxx
+      xx_userpoolID: us-east-1_xxA00AAx0
+      clientID: x0x00xxx00xx0xxxxx0x0xxx  # Not the same as above
+      secret: 0x0x0x0x0x0x0x0x0x0x0x0x0x0x0x0x0x0x0x0x0x
+      userpoolID: us-east-1_xxA00AAx0  # Not the same as above
+  S3:
+    '000000000000':
+      normalizer: xx-dynonormalize-dev
+      nubucket: xx-portal-dev
+      nubucketmedia: xx-portalmedia-dev
+      numarket: xx-marketplace-dev
+      bucket: xx-portal-dev
+      lambda: xx-lambda-dev
+      sqldata: xx-aurora-data-dev
+      sftp: xx-sftp-dev
+      athena: xx-dynonormalize-dev
+    '000000000001':
+      normalizer: xx-dynonormalize-test
+      nubucket: xx-portal-test
+      nubucketmedia: xx-portalmedia-test
+      numarket: xx-marketplace-test
+      bucket: xx-portal-test
+      lambda: xx-lambda-test
+      sqldata: xx-aurora-data-test
+      sftp: xx-sftp-test2
+      athena: xx-dynonormalize-test
+  token:
+    '000000000000':
+      Upload_signer: arn:aws:kms:us-east-1:000000000000:key/x00x0xx0-00x0-0xx0-x0x0-x00000x0000x
+    '000000000001':
+      Upload_signer: arn:aws:kms:us-east-1:000000000001:key/x00x0xx0-00x0-0xx0-x0x0-x00000x0000x
+  cloudfront:
+    '000000000000':
+      cf_ID: E1XXXXXXXXXXXX
+    '000000000001':
+      cf_ID: E1XXXXXXXXXXXX
+  signer:
+    '000000000000':
+      cf_key: APKAXXXXXXXXXXXXXXXX
+    '000000000001':
+      cf_key: APKAXXXXXXXXXXXXXXXX
+  RDS:
+    '000000000000':
+      name: dev
+      db: db.dev.xx.com
+      vpc: vpc-0000x000
+      nat: subnet-00x00x00
+      vpc_subnet_ids:
+        - subnet-000x0x00
+        - subnet-000x0x01
+        - subnet-000x0x02
+      vpc_security_group_ids:
+        - sg-0xx0x00
+    '000000000001':
+      name: test
+      db: db.test.xx.com
+      vpc: vpc-0000x000
+      nat: subnet-00x00x00
+      vpc_subnet_ids:
+        - subnet-000x0x00
+        - subnet-000x0x01
+        - subnet-000x0x02
+      vpc_security_group_ids:
+        - sg-0xx0x00
+...

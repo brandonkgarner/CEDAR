@@ -1,0 +1,6 @@
+---
+- hosts: dev
+  name: micro modler for lambda-CN-FileTrans
+  remote_user: root
+  roles:
+  - CN-FileTrans
