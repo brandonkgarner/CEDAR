@@ -4,7 +4,6 @@ pre:
   service: s3
   bucket: beto-dev-portal
   target: v3/testupload
-  local_path: '.'
   files:
     - files/filetest001.pdf #'{{ role_path }}/files/filetest001.pdf'
     - files/filetest002.pdf

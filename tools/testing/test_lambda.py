@@ -18,7 +18,7 @@ dir_path = os.path.dirname(__file__)
 real_dir_path = os.path.dirname(os.path.realpath(__file__))
 # directory='/path/to/Ansible_Deployer/ansible'
 
-# python Main_DEPLOYER.py -DY dev "test,stage,prod,tpp"  "xx_tablename" molderCONFIG.yaml API_Name true
+# python Main_DEPLOYER.py -DY dev "test,stage,prod,tpp"  "xx_tablename" ENVRFIG.yaml API_Name true
 
 
 class LambdaTester():
