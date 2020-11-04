@@ -6,7 +6,7 @@ Services on amazon are not always easy to unit test within the context of the cl
 
 ### Lambda
 
-With lambdas simply add your ".ceder." test files to the root of your lambda project files. if you have dependencies add them to a folder like "files". When ready "deploy" the lambda to AWS and thats it!!. (\* you can add as many test files as you like)
+With lambdas simply add your ".cedar." test files to the root of your lambda project files. if you have dependencies add them to a folder like "files". When ready "deploy" the lambda to AWS and thats it!!. (\* you can add as many test files as you like)
 
 ### Lambda Simple Example
 
