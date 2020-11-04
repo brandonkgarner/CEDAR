@@ -118,22 +118,27 @@ class LambdaTester():
 
     def zip_files_move(self, testObjs, targetRole, roleFolder, zipName):
         roleLabel = role_yaml_clean(targetRole)
-        prefix = "{{ role_path }}"
+        prefix_base = "{{ role_path }}"
         # if roleLabel is in the roleFolder path then this is just a single Main Role
 
         if roleLabel in roleFolder:
             fileFolder = "%s/files" % (roleFolder)
         else:
             fileFolder = "%s/files/%s" % (roleFolder, targetRole)
-            prefix = "%s/files/%s" % (prefix, targetRole)
+            prefix = "%s/files/%s" % (prefix_base, targetRole)
             # prefix = "%s/%s" % (prefix, targetRole)
             if not os.path.exists(fileFolder):
                 os.makedirs(fileFolder)
         folder_files = []
+        states = ['pre', 'assert', 'post']
         for roleK, rolev in testObjs.items():
-            pre = {}
+            pre = assertin = post = {}
             if 'pre' in rolev:
                 pre = rolev['pre']
+            if 'assert' in rolev:
+                assertin = rolev['assert']
+            if 'post' in rolev:
+                post = rolev['post']
             run = rolev['run']
             for k, v in pre.items():
                 aaf = self.collectFiles(v)
@@ -143,6 +148,14 @@ class LambdaTester():
                 aaf = self.collectFiles(v)
                 folder_files = folder_files + aaf
                 self.role_update_paths(run, k, v, prefix)
+            for k, v in assertin.items():
+                if 'local_path' in k:
+                    if '.' in v:
+                        assertin['local_path'] = prefix_base
+            for k, v in post.items():
+                if 'local_path' in k:
+                    if '.' in v:
+                        post['local_path'] = prefix_base
 
         for files_in in folder_files:  # Adds folders in root/files folder
             if files_in.startswith("/"):

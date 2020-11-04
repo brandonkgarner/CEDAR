@@ -127,15 +127,22 @@ def cd_invoke(module, client, name, payload, type_in, assert_key=None, assert_re
                            payload, type_in, function_keys)
     if environ_override:
         lambda_environ(module, client, name, function_keys)
-    if assert_key:
-        if assert_key in result:
-            if result[assert_key] == assert_result:
+    if assert_key and result['Payload']:
+        function_result = json.loads(result['Payload'].read().decode("utf-8"))
+        # function_result = result['Payload'].read()
+        if assert_key in function_result:
+            if isinstance(assert_result, str):
+                if assert_result == 'True' or assert_result == "False":
+                    assert_result = bool(assert_result)
+                elif assert_result.isnumeric():
+                    assert_result = int(assert_result)
+            if function_result[assert_key] == assert_result:
                 found = True
     elif result:
         found = True
-    if found:
-        module.fail_json(msg='Lambda[%s] failed assert of %s:%s failed' % (
-            name, assert_key, assert_result))
+    if not found:
+        module.fail_json(msg='[E] Lambda[%s] "%s":%s result: %s' % (
+            name, assert_key, assert_result, function_result[assert_key]))
     return [name], False if found else True
 
 
