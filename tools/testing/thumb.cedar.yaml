@@ -29,19 +29,18 @@ assert:
   bucket: beto-dev-portal
   target: v3/testpreview
   local_path: '.'
-  file:
-    - filetest001_preview.pdf
-    - filetest002_preview.pdf
-    - filetest003_preview.pdf
-  exists: true
+  files:
+    - filetest001_preview.png
+    - filetest002_preview.png
+    - filetest003_preview.png
 post:
   action: delete
   service: s3
   bucket: beto-dev-portal
   files:
     - v3/testupload/filetest001.pdf
-    - v3/testpreview/filetest001_preview.pdf
+    - v3/testpreview/filetest001_preview.png
     - v3/testupload/filetest002.pdf
-    - v3/testpreview/filetest002_preview.pdf
+    - v3/testpreview/filetest002_preview.png
     - v3/testupload/filetest003.pdf
-    - v3/testpreview/filetest003_preview.pdf
+    - v3/testpreview/filetest003_preview.png

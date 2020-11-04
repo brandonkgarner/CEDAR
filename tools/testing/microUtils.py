@@ -67,13 +67,17 @@ class CommonEncoder(json.JSONEncoder):
         return super(CommonEncoder, self).default(o)
 
 
+def role_yaml_clean(rolename):
+    rolename = rolename.replace("-", "_")  # SMALL ROLE
+    rolename = rolename.replace("*", "_")
+    return rolename
+
+
 def ansible_describe_setup(temp, target, targetRole):
     ansible_folders = ["defaults", "files", "handlers", "tasks", "templates"]
     rootFolder = "%s/%s" % (temp, target)
-    targetLabel = target.replace("-", "_")  # BIG ROLE
-    targetLabel = targetLabel.replace("*", "_")
-    roleLabel = targetRole.replace("-", "_")  # SMALL ROLE
-    roleLabel = roleLabel.replace("*", "_")
+    targetLabel = role_yaml_clean(target)  # BIG ROLE
+    roleLabel = role_yaml_clean(targetRole)  # SMALL ROLE
     taskMain = []
     defaultsMain = []
     if os.path.exists(rootFolder):  # found folder target
@@ -107,8 +111,7 @@ def ansibleSetup(temp, target, isFullUpdate, skipFiles=False):
                 os.makedirs(newFolder)
 
         # CREATE Template TASkS
-    targetLabel = target.replace("-", "_")
-    targetLabel = targetLabel.replace("*", "_")
+    targetLabel = role_yaml_clean(target)
     taskMain = [{"name": "INITIAL PROJECT SETUP  project VAR", "set_fact": {"project": "{{ %s }}" % targetLabel}}
                 ]
     if not skipFiles:
