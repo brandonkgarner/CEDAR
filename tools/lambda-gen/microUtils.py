@@ -45,7 +45,8 @@ class FormatSafeDumper(yaml.SafeDumper):
         return self.represent_sequence('tag:yaml.org,2002:seq', list(data))
 
 
-FormatSafeDumper.add_representer(decimal.Decimal, FormatSafeDumper.represent_decimal)
+FormatSafeDumper.add_representer(
+    decimal.Decimal, FormatSafeDumper.represent_decimal)
 FormatSafeDumper.add_representer(set, FormatSafeDumper.represent_set)
 FormatSafeDumper.add_representer(tuple, FormatSafeDumper.represent_set)
 
@@ -74,10 +75,10 @@ def ansibleSetup(temp, target, isFullUpdate, skipFiles=False):
         if os.path.exists(rootFolder) and isFullUpdate:
             oldDIR = "%s_old" % rootFolder
             if os.path.exists(oldDIR):
-                print ("[W] deleting old directory %s " % oldDIR)
+                print("[W] deleting old directory %s " % oldDIR)
                 shutil.rmtree(oldDIR)
             os.rename(rootFolder, oldDIR)
-            print (rootFolder)
+            print(rootFolder)
         # folders needed
 
         if not os.path.exists(rootFolder):
@@ -96,7 +97,8 @@ def ansibleSetup(temp, target, isFullUpdate, skipFiles=False):
         taskWithFiles = [
             {"import_tasks": "../aws/sts.yml", "vars": {"project": '{{ project }}'}},
             {"import_tasks": "../aws/IAM.yml", "vars": {"project": '{{ project }}'}},
-            {"import_tasks": "../aws/lambda.yml", "vars": {"project": '{{ project }}'}}
+            {"import_tasks": "../aws/lambda.yml",
+                "vars": {"project": '{{ project }}'}}
             # {"include": "dynamo_fixtures.yml project={{ project }}"},
         ]
         taskMain = taskMain + taskWithFiles
@@ -119,9 +121,9 @@ def describe_role(name, aconnect, acct, apiTRigger=False):
     policies = []
     givenPolicies = aplcy['AttachedPolicies']
     if apiTRigger:
-        print (" #########################################################")
-        print (" ########### ADDING Policy : CR-Lambda-APIGW. ############")
-        print (" #########################################################")
+        print(" #########################################################")
+        print(" ########### ADDING Policy : CR-Lambda-APIGW. ############")
+        print(" #########################################################")
 
         pname = "CR-Lambda-APIGW"
         p_arn = "arn:aws:iam::%s:policy/%s" % (acct, pname)
@@ -141,18 +143,19 @@ def describe_policy(arn, name, aconnect):
     client = aconnect.__get_client__('iam')
     #client = boto3.client('iam')
     polMeta = client.get_policy(PolicyArn=arn)['Policy']
-    polDefined = client.get_policy_version(PolicyArn=arn, VersionId=polMeta['DefaultVersionId'])
+    polDefined = client.get_policy_version(
+        PolicyArn=arn, VersionId=polMeta['DefaultVersionId'])
     #polDefined = client.get_role_policy(RoleName=name,PolicyName=polName)
     print(" POLICY. %s...." % name)
-    print (polDefined)
+    print(polDefined)
     doc = polDefined['PolicyVersion']['Document']
     # print("------==polMeta=--------")
     # print (polMeta)
     description = 'CR-Default no description found'
-    if 'Description'in polMeta:
+    if 'Description' in polMeta:
         description = polMeta['Description']
     path = polMeta['Path']
-    print ("  -->" + path)
+    print("  -->" + path)
     return {'PolicyName': name,
             'Path': path,
             'PolicyDocument': doc,
@@ -163,7 +166,8 @@ def writeYaml(data, filepath, option=''):
     dd = {"---": data}
     fullpath = '%s%s.%s' % (filepath, option, 'yaml')
     with open(fullpath, 'wb') as outfile:
-        yaml.dump(dd, outfile, default_flow_style=False, encoding='utf-8', allow_unicode=True, Dumper=FormatSafeDumper)
+        yaml.dump(dd, outfile, default_flow_style=False,
+                  encoding='utf-8', allow_unicode=True, Dumper=FormatSafeDumper)
     for line in fileinput.input([fullpath], inplace=True):
         if line.strip().startswith("'---"):
             line = '---\n'
@@ -216,12 +220,15 @@ def loadServicesMap(fullpath, domain='RDS'):
             print(" LOADING 2 ServiceMap: %s" % fullpath)
     with open(fullpath, newline='') as stream:
         exp = yaml.load(stream)
-    targets = exp['services'][domain]
+    if domain:
+        targets = exp['services'][domain]
+    else:
+        targets = exp['services']
     return targets
 
 
 def loadYaml(fullpath):
-    print (" LOADING: %s" % fullpath)
+    print(" LOADING: %s" % fullpath)
     if not os.path.isfile(fullpath):
         return None, None, None
     with open(fullpath, newline='') as stream:
@@ -229,9 +236,9 @@ def loadYaml(fullpath):
 
 
 def loadConfig(fullpath, env):
-    print (" LOADING CONFIG: %s" % fullpath)
+    print(" LOADING CONFIG: %s" % fullpath)
     if not os.path.isfile(fullpath):
-        return None, None, None
+        return None, None
     # with open(fullpath, newline='') as stream:
     with open(fullpath, 'r') as stream:
         exp = yaml.load(stream)
@@ -241,3 +248,18 @@ def loadConfig(fullpath, env):
     return target, global_accts
 
     # END
+
+
+def serviceID(accountid, mapfile, env='dev', svc_map=None):
+    eID = 1000000000000000000001
+    if not svc_map:
+        eIDs = loadServicesMap(mapfile, "eID")
+    else:
+        eIDs = svc_map["eID"]
+    if accountid in eIDs:
+        eID = eIDs[accountid]['value']
+    else:
+        mixAccount = "%s_%s" % (accountid, env)
+        if mixAccount in eIDs:
+            eID = eIDs[mixAccount]['value']
+    return eID

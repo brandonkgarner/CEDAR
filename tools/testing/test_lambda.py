@@ -11,7 +11,7 @@ import awsconnect
 from awsconnect import awsConnect
 
 from microUtils import loadConfig, yamlRead, account_replace, ansibleSetup, ansible_describe_setup
-from microUtils import roleCleaner, role_yaml_clean, writeYaml, loadServicesMap
+from microUtils import roleCleaner, role_yaml_clean, writeYaml, loadServicesMap, serviceID
 
 # sudo ansible-playbook -i windows-servers API_Name.yaml -vvvv
 dir_path = os.path.dirname(__file__)
@@ -273,7 +273,9 @@ class LambdaTester():
         # ##########   END WRITE  ####################
         #############################################
         #############################################
-
+        if 'services_map' in accountOrigin:
+            mapfile = accountOrigin['services_map']
+            serviceMap = loadServicesMap(mapfile, None)
         for akey, account in accounts.items():
             m_account = akey.split("_")[0]
             if akey not in BUCKET_MAP:
@@ -290,6 +292,7 @@ class LambdaTester():
             signerObj = SIGNER_MAP[akey]
             if akey == acctID:
                 acctTitle = account['title']
+            eID = serviceID(akey, None, account['all'], serviceMap)
             accDetail = {
                 "account_id": akey,
                 "error_path": error_path,
@@ -297,7 +300,7 @@ class LambdaTester():
                 "env": acctTitle,
                 "role_duration": 3600,
                 "region": "us-east-1",
-                "eid": account['eID'],
+                "eid": eID,
                 "roles": [],
                 "policies": []
             }

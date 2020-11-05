@@ -17,7 +17,7 @@ import distutils
 
 # from microUtils import writeYaml,loadServicesMap, loadConfig, ansibleSetup
 from microUtils import ansibleSetup
-from microUtils import writeYaml
+from microUtils import writeYaml, serviceID, loadServicesMap
 # from microUtils import writeJSON
 # from microUtils import loadServicesMap
 from microUtils import account_replace
@@ -37,7 +37,7 @@ class DynamoMolder():
         if not os.path.exists(temp):
             os.makedirs(temp)
         else:
-            print (" directory %s already exists... remove or change name." % temp)
+            print(" directory %s already exists... remove or change name." % temp)
 
     def get_Dynamolambdas(self, table, aconnect, nextMarker=None):
         client = aconnect.__get_client__('lambda')
@@ -54,7 +54,8 @@ class DynamoMolder():
         filtered = []
         for ls in all_Lambdas:
             lname = ls['FunctionName']
-            eventMaps = client.list_event_source_mappings(FunctionName=lname)['EventSourceMappings']
+            eventMaps = client.list_event_source_mappings(
+                FunctionName=lname)['EventSourceMappings']
 
             for event in eventMaps:
                 source = event['EventSourceArn']
@@ -102,6 +103,8 @@ class DynamoMolder():
 #       starting_position: TRIM_HORIZON
 #   with_items: "{{ project.dynamodbs }}"
 #   when: '{{ item.hash_key_name is not defined and item.read_capacity is defined and not (item.state=="absent")}}'
+
+
     def dynamoSimpleTypes(self, type):
         if "s" in type.lower():
             return "STRING"
@@ -123,13 +126,16 @@ class DynamoMolder():
         TableStatus = dTable['TableStatus']
 
         keysIn = {}
-        attDefined = {item['AttributeName']: self.dynamoSimpleTypes(item['AttributeType']) for item in dTable['AttributeDefinitions']}
+        attDefined = {item['AttributeName']: self.dynamoSimpleTypes(
+            item['AttributeType']) for item in dTable['AttributeDefinitions']}
         for ks in dTable['KeySchema']:
             namein = ks['AttributeName']
             if 'HASH' in ks['KeyType']:
-                keysIn.update({"hash_key_name": namein, "hash_key_type": attDefined[namein]})
+                keysIn.update({"hash_key_name": namein,
+                               "hash_key_type": attDefined[namein]})
             else:
-                keysIn.update({"range_key_name": namein, "range_key_type": attDefined[namein]})
+                keysIn.update({"range_key_name": namein,
+                               "range_key_type": attDefined[namein]})
 
         pr = dTable['ProvisionedThroughput']
         read_capacity = pr['ReadCapacityUnits']
@@ -137,13 +143,16 @@ class DynamoMolder():
 
         if 'LocalSecondaryIndexes' in dTable:
             for kl in dTable['LocalSecondaryIndexes']:  # all , include, keys_only
-                lso = {"name": kl['IndexName'], "type": None, "hash_key_name": None, "range_key_name": None}
+                lso = {"name": kl['IndexName'], "type": None,
+                       "hash_key_name": None, "range_key_name": None}
                 for ks in kl['KeySchema']:
                     LSI_namein = ks['AttributeName']
                     if 'HASH' in ks['KeyType']:
-                        lso.update({"hash_key_name": LSI_namein, "hash_key_type": attDefined[LSI_namein]})
+                        lso.update({"hash_key_name": LSI_namein,
+                                    "hash_key_type": attDefined[LSI_namein]})
                     else:
-                        lso.update({"range_key_name": LSI_namein, "range_key_type": attDefined[LSI_namein]})
+                        lso.update({"range_key_name": LSI_namein,
+                                    "range_key_type": attDefined[LSI_namein]})
                 # print(dTable)
                 lpj = kl['Projection']
                 lpj_type = lpj['ProjectionType']
@@ -155,13 +164,16 @@ class DynamoMolder():
                 indexes.append(lso)
         if 'GlobalSecondaryIndexes' in dTable:
             for gl in dTable['GlobalSecondaryIndexes']:
-                gso = {"name": gl['IndexName'], "type": None, "hash_key_name": None, "range_key_name": None}
+                gso = {"name": gl['IndexName'], "type": None,
+                       "hash_key_name": None, "range_key_name": None}
                 for ks in gl['KeySchema']:
                     namein = ks['AttributeName']
                     if 'HASH' in ks['KeyType']:
-                        gso.update({"hash_key_name": ks['AttributeName'], "hash_key_type": attDefined[namein]})
+                        gso.update(
+                            {"hash_key_name": ks['AttributeName'], "hash_key_type": attDefined[namein]})
                     else:
-                        gso.update({"range_key_name": ks['AttributeName'], "range_key_type": attDefined[namein]})
+                        gso.update(
+                            {"range_key_name": ks['AttributeName'], "range_key_type": attDefined[namein]})
                 lpj = gl['Projection']
                 lpj_type = lpj['ProjectionType']
                 gso['type'] = "global_%s" % (lpj_type.lower())
@@ -236,10 +248,12 @@ class DynamoMolder():
                 "resources": False
             }
 
-        taskMain, rootFolder, targetLabel = ansibleSetup(self.temp, target, True)
+        taskMain, rootFolder, targetLabel = ansibleSetup(
+            self.temp, target, True)
         taskWithFiles = [
             {"import_tasks": "../aws/sts.yml", "vars": {"project": '{{ project }}'}},
-            {"import_tasks": "../aws/cr_dynamodb.yml", "vars": {"project": '{{ project }}'}}
+            {"import_tasks": "../aws/cr_dynamodb.yml",
+                "vars": {"project": '{{ project }}'}}
         ]
         taskRaw = taskMain[0]
         taskMain = [taskRaw] + taskWithFiles
@@ -256,10 +270,13 @@ class DynamoMolder():
         # ##########   END WRITE  ####################
         #############################################
         #############################################
-
+        if 'services_map' in accountOrigin:
+            mapfile = accountOrigin['services_map']
+            serviceMap = loadServicesMap(mapfile, None)
         for akey, account in accounts.items():
             if acctID == akey:
                 acctTitle = account['title']
+            eID = serviceID(akey, None, account['all'], serviceMap)
             accDetail = {
                 "account_id": akey,
                 "env": account['title'],
@@ -267,7 +284,7 @@ class DynamoMolder():
                 "skipping": skipping,
                 "role_duration": 3600,
                 "region": "us-east-1",
-                "eid": account['eID']
+                "eid": eID
             }
             if assumeRole:
                 accDetail.update({"cross_acct_role": account['role']})
@@ -283,14 +300,14 @@ class DynamoMolder():
             account_replace("%s.yaml" % mainIn, str(acctID), str(akey))
 
         if sendto:
-            print (" .... creating a main.yaml for ansible using dev")
+            print(" .... creating a main.yaml for ansible using dev")
             opt = "main_%s.yaml" % accountOrigin['all']
             src = "%s/%s/%s" % (rootFolder, 'defaults', opt)
             opt2 = "main.yaml"
             dst = "%s/%s/%s" % (rootFolder, 'defaults', opt2)
             copyfile(src, dst)
-            print (" -------==------===---- COPY START....")
-            print (" sending to %s. from %s" % (sendto, rootFolder))
+            print(" -------==------===---- COPY START....")
+            print(" sending to %s. from %s" % (sendto, rootFolder))
             distutils.dir_util.copy_tree(rootFolder, sendto)
             ansibleRoot = sendto.split('roles/')[0]
             targets = ['%s' % target]

@@ -32,7 +32,7 @@ import traceback
 # from context import FormatContext
 # import pyaml
 # pip install pyyaml
-from microUtils import writeYaml, writeJSON, account_replace, loadServicesMap, loadConfig, ansibleSetup
+from microUtils import writeYaml, writeJSON, account_replace, loadServicesMap, loadConfig, ansibleSetup, serviceID
 from microUtils import describe_role
 from microFront import CloudFrontMolder
 from microGateway import ApiGatewayMolder
@@ -287,6 +287,9 @@ class LambdaMolder():
         # print(NETWORK_MAP)
         # raise ValueError(" stopping now for check...")
         # CREATE DEFAULT in "defaults" VARS
+        if 'services_map' in accountOrigin:
+            mapfile = accountOrigin['services_map']
+            serviceMap = loadServicesMap(mapfile, None)
         for akey, account in accounts.items():
             networkObj = NETWORK_MAP[akey]
             bucketObj = BUCKET_MAP[akey]
@@ -300,6 +303,7 @@ class LambdaMolder():
             if akey == acctID:
                 acctTitle = account['title']
 
+            eID = serviceID(akey, None, account['all'], serviceMap)
             accDetail = {
                 "account_id": akey,
                 "error_path": error_path,
@@ -307,7 +311,7 @@ class LambdaMolder():
                 "env": account['title'],
                 "role_duration": 3600,
                 "region": "us-east-1",
-                "eid": account['eID'],
+                "eid": eID,
                 "roles": [],
                 "policies": []
             }

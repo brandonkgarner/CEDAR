@@ -98,6 +98,7 @@ The states above will result in the following:
 If using Jenkins or other Automation tools dependencies required:
 
 - Python 3
+- [boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
 - [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html)
 
 ###
@@ -112,7 +113,7 @@ Breakdown of above command:
 
 - -L designates "lambda" service [REQUIRED]
 - "dev" is the environment defined in your ENVR.yaml file [REQUIRED]
-- the lambda or lambda(s) to test against if more than one use comma delimited value like "lambda1,lambda2,lambda3" [REQUIRED]
+- the "lambda" or lambda(s) to test against if more than one use comma delimited value like _"lambda1,lambda2,lambda3"_ [REQUIRED]
 - ENVR.yaml is your environment file that holds information about the environments needed. [REQUIRED]
 - alias name can be used if you plan on running more than one lambda at a time. [OPTIONAL]
 

@@ -254,7 +254,10 @@ def loadServicesMap(fullpath, domain='RDS'):
             print(" LOADING 2 ServiceMap: %s" % fullpath)
     with open(fullpath, newline='') as stream:
         exp = yaml.load(stream)
-    targets = exp['services'][domain]
+    if domain:
+        targets = exp['services'][domain]
+    else:
+        targets = exp['services']
     return targets
 
 
@@ -292,3 +295,18 @@ def loadConfig(fullpath, env):
     return target, global_accts
 
     # END
+
+
+def serviceID(accountid, mapfile, env='dev', svc_map=None):
+    eID = 1000000000000000000001
+    if not svc_map:
+        eIDs = loadServicesMap(mapfile, "eID")
+    else:
+        eIDs = svc_map["eID"]
+    if accountid in eIDs:
+        eID = eIDs[accountid]['value']
+    else:
+        mixAccount = "%s_%s" % (accountid, env)
+        if mixAccount in eIDs:
+            eID = eIDs[mixAccount]['value']
+    return eID

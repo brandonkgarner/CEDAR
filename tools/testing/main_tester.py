@@ -10,7 +10,7 @@ from test_lambda import LambdaTester
 
 from main_ansible_tester import testStart
 
-from microUtils import loadConfig, roleCleaner
+from microUtils import loadConfig, roleCleaner, serviceID
 
 # sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # sudo ansible-playbook -i windows-servers API_Name.yaml -vvvv
@@ -36,9 +36,14 @@ class CEDARTests():
         accountRole = global_accts[accID]['role']
         awsconnect.stsClient_init()
         sts_client = awsconnect.stsClient
-        print(global_accts[accID]['eID'])
-        aconnect = awsConnect(
-            accID, global_accts[accID]['eID'], accountRole, sts_client, region)
+        if 'eID' in origin:
+            eID = origin['eID']
+        if 'services_map' in origin:
+            mapfile = origin['services_map']
+            eID = serviceID(origin['account'], mapfile, origin['all'])
+
+        print(eID)
+        aconnect = awsConnect(accID, eID, accountRole, sts_client, region)
         aconnect.connect()
         errors = []
         results = []

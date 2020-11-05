@@ -29,7 +29,7 @@ import distutils
 
 # from awsconnect import awsConnect
 
-from microUtils import writeYaml, account_replace, loadServicesMap, ansibleSetup
+from microUtils import writeYaml, account_replace, loadServicesMap, ansibleSetup, serviceID
 from microUtils import describe_role, roleCleaner
 
 # sudo ansible-playbook -i windows-servers CR-Admin-Users.yml -vvvv
@@ -54,7 +54,7 @@ class ApiGatewayMolder():
         if not os.path.exists(temp):
             os.makedirs(temp)
         else:
-            print (" directory %s already exists... remove or change name." % temp)
+            print(" directory %s already exists... remove or change name." % temp)
 
     #############################################
     # #####   [ USAGE PLAN KEYs ]#################
@@ -65,7 +65,8 @@ class ApiGatewayMolder():
         if position is None:
             response = client.get_api_key(apiKey=apiKey, limit=500)
         else:
-            response = client.get_api_key(apiKey=apiKey, position=position, limit=500)
+            response = client.get_api_key(
+                apiKey=apiKey, position=position, limit=500)
         baseList = response['items']
         if "position" in response:
             rlist = self.describe_apiKey(client, apiKey, response['position'])
@@ -79,13 +80,16 @@ class ApiGatewayMolder():
     def describe_planKey(self, client, usagePlanID, position=None):
         rlist = []
         if position is None:
-            response = client.get_usage_plan_keys(usagePlanId=usagePlanID, limit=500)
+            response = client.get_usage_plan_keys(
+                usagePlanId=usagePlanID, limit=500)
         else:
-            response = client.get_usage_plan_keys(usagePlanId=usagePlanID, position=position, limit=500)
+            response = client.get_usage_plan_keys(
+                usagePlanId=usagePlanID, position=position, limit=500)
         temp = response['items']
         baseList = self.keysMapAPI(client, temp)
         if "position" in response:
-            rlist = self.describe_planKey(client, usagePlanID, response['position'])
+            rlist = self.describe_planKey(
+                client, usagePlanID, response['position'])
         keys = baseList + rlist
         return keys
 
@@ -94,10 +98,12 @@ class ApiGatewayMolder():
         if position is None:
             response = client.get_usage_plans(keyId=restApiId, limit=500)
         else:
-            response = client.get_usage_plans(keyId=restApiId, position=position, limit=500)
+            response = client.get_usage_plans(
+                keyId=restApiId, position=position, limit=500)
         baseList = response['items']
         if "position" in response:
-            rlist = self.describe_apiUsage(client, restApiId, response['position'])
+            rlist = self.describe_apiUsage(
+                client, restApiId, response['position'])
         usagePlans = baseList + rlist
         return usagePlans
 
@@ -157,10 +163,12 @@ class ApiGatewayMolder():
         if position is None:
             response = client.get_authorizers(restApiId=restApiId, limit=500)
         else:
-            response = client.get_authorizers(restApiId=restApiId, position=position, limit=500)
+            response = client.get_authorizers(
+                restApiId=restApiId, position=position, limit=500)
         baseList = response['items']
         if "position" in response:
-            rlist = self.describe_Allmodels(client, restApiId, response['position'])
+            rlist = self.describe_Allmodels(
+                client, restApiId, response['position'])
         models = baseList + rlist
         return models
 
@@ -178,15 +186,18 @@ class ApiGatewayMolder():
         if position is None:
             response = client.get_models(restApiId=restApiId, limit=500)
         else:
-            response = client.get_models(restApiId=restApiId, position=position, limit=500)
+            response = client.get_models(
+                restApiId=restApiId, position=position, limit=500)
         baseList = response['items']
         if "position" in response:
-            rlist = self.describe_Allmodels(client, restApiId, response['position'])
+            rlist = self.describe_Allmodels(
+                client, restApiId, response['position'])
         models = baseList + rlist
         return models
 
     def get_attrModel(self, client, target, restApiId, init=False):
-        rawSchema = client.get_model(restApiId=restApiId, modelName=target, flatten=True)['schema']
+        rawSchema = client.get_model(
+            restApiId=restApiId, modelName=target, flatten=True)['schema']
 
         rr = json.loads(rawSchema)
         mType = rr['type']
@@ -216,7 +227,8 @@ class ApiGatewayMolder():
                 if init:
                     return {'type': mType, 'items': value['items']}
             elif len(v) > 1 and type(v) is dict:
-                print(v)  # 'type': 'object', 'additionalProperties': {'$ref': '#/definitions/address'}}
+                # 'type': 'object', 'additionalProperties': {'$ref': '#/definitions/address'}}
+                print(v)
                 oType = v['type']
                 # if 'items' in v:
                 for oK, oV in v.items():
@@ -268,7 +280,8 @@ class ApiGatewayMolder():
         models.update({'basic': basic, 'dependant': advanced})
         basicNames = []
         for model in model_list:
-            rawSchema = model['schema'].replace(restApiId, "%s_id" % (name))  # gets converted in real time
+            rawSchema = model['schema'].replace(
+                restApiId, "%s_id" % (name))  # gets converted in real time
             # model['schema']=model['schema'].replace("\n", "" ).replace( "\\", "" )
             # model['schema'] =model['schema'].replace('{', "{'$schema':'http://json-schema.org/draft-04/schema#', 'title': '%s' ,"%(model['name']), 1)
 
@@ -379,7 +392,8 @@ class ApiGatewayMolder():
                                     if num > i:  # reference is AFTER i and MUST be before
                                         additionali = additionali + 1
                                         del array[num]
-                                        array.insert(i, atemp)  # Item now just before reference
+                                        # Item now just before reference
+                                        array.insert(i, atemp)
                                         if 'client' in mname and 'clients' in IName:
                                             print(i)
                                             print(num)
@@ -404,7 +418,8 @@ class ApiGatewayMolder():
             # delete model first
             modelName = model.name
             try:
-                response = client.delete_model(restApiId=model.restApiId, modelName=modelName)
+                response = client.delete_model(
+                    restApiId=model.restApiId, modelName=modelName)
                 print("[W] found MODEL %s and deleted..." % modelName)
             except ClientError as e:
                 print(" -[W]- NOT found MODEL %s .." % modelName)
@@ -430,7 +445,8 @@ class ApiGatewayMolder():
             # delete model first
             modelName = model.name
             try:
-                response = client.delete_model(restApiId=model.restApiId, modelName=modelName)
+                response = client.delete_model(
+                    restApiId=model.restApiId, modelName=modelName)
                 print("[W] found MODEL %s and deleted..." % modelName)
             except ClientError as e:
                 print(" -[W]- NOT found MODEL %s .." % modelName)
@@ -454,7 +470,8 @@ class ApiGatewayMolder():
                     apiStage = "%s_%s" % (apiName, stageLabel)
                     if apiStage in stages:
                         continue
-                    stages.update({apiStage: {'stage': stageLabel, 'api': apiName, 'state': 'present'}})
+                    stages.update(
+                        {apiStage: {'stage': stageLabel, 'api': apiName, 'state': 'present'}})
         return stages
 
     def getAllResources(self, client, restApiId, position=None):
@@ -462,10 +479,12 @@ class ApiGatewayMolder():
         if position is None:
             response = client.get_resources(restApiId=restApiId, limit=500)
         else:
-            response = client.get_resources(restApiId=restApiId, position=position, limit=500)
+            response = client.get_resources(
+                restApiId=restApiId, position=position, limit=500)
         baseList = response['items']
         if "position" in response:
-            rlist = self.getAllResources(client, restApiId, response['position'])
+            rlist = self.getAllResources(
+                client, restApiId, response['position'])
         final = baseList + rlist
         return final
 
@@ -495,14 +514,14 @@ class ApiGatewayMolder():
         auths = []
         addedResource = {}
         possibleOptions = {}
-        print ("*********************************************************************")
+        print("*********************************************************************")
 
-        print ("                  API GATEWAY                                              ")
-        print ("*********************************************************************")
-        print (apis)
+        print("                  API GATEWAY                                              ")
+        print("*********************************************************************")
+        print(apis)
 
-        print ("*********************************************************************")
-        print (targetAPI)
+        print("*********************************************************************")
+        print(targetAPI)
 
         GREEDY = False
         if '*' == resourceNname:
@@ -528,9 +547,10 @@ class ApiGatewayMolder():
                 final_MODELS = models
                 final_AUTHS = auths
 
-            print ("                            API GATEWAY       resources                                       ")
-            print ("     resources    %s     " % resources)
-            
+            print(
+                "                            API GATEWAY       resources                                       ")
+            print("     resources    %s     " % resources)
+
             # for rest in resources['items']:
             for rest in resources:
                 path = rest['path']
@@ -544,7 +564,7 @@ class ApiGatewayMolder():
                 if "xxx/" in path:
                     print(path)
                     DEBUG = True
-                    
+
                 else:
                     DEBUG = False
 
@@ -570,19 +590,17 @@ class ApiGatewayMolder():
                     # DELETE ABOVE !!!!!!!!!
 
                     if DEBUG:
-                        print ("   @#@#. 002. #@#@ %s %s  client.get_method(restApiId=%s,resourceId=%s,httpMethod=%s)" % (
-                        name, path, id, mId, key))
+                        print("   @#@#. 002. #@#@ %s %s  client.get_method(restApiId=%s,resourceId=%s,httpMethod=%s)" % (
+                            name, path, id, mId, key))
                     # integrated = None
                     # mInfo = value
-                    print (value)
+                    print(value)
 
                     # if (resourceString != pathString and resourceType != 'lambda' and not GREEDY):
 
-
                     if DEBUG:
-                        print ("   *API*     [%s][%s]" % (resourceNname, pathString))
-          
-
+                        print("   *API*     [%s][%s]" %
+                              (resourceNname, pathString))
 
                     # try:
                     #     integrated = client.get_integration(restApiId=id, resourceId=mId, httpMethod=key)
@@ -591,7 +609,8 @@ class ApiGatewayMolder():
                     #     print(e.response['Error']['Message'])
 
                     # print integrated
-                    method = client.get_method(restApiId=id, resourceId=mId, httpMethod=key)
+                    method = client.get_method(
+                        restApiId=id, resourceId=mId, httpMethod=key)
                     del method['ResponseMetadata']
                     authType = method['authorizationType']
                     keyRequired = method['apiKeyRequired']
@@ -604,7 +623,7 @@ class ApiGatewayMolder():
                     if not 'methodIntegration' in method:
                         continue
                     methodIntegration = method['methodIntegration']
-                    print (" method:")
+                    print(" method:")
                     # print (method)
                     print("----====-----====----====----")
                     # method = client.get_method( restApiId='20iv84vxh9',resourceId='i8b9of',httpMethod='GET')
@@ -648,21 +667,25 @@ class ApiGatewayMolder():
                                 for md in models['dependant']:
                                     if md['name'] == rvalue:
                                         if md not in final_MODELS['dependant']:
-                                            final_MODELS['dependant'].append(md)
-                                            heritage = self.modelRefs(md['schema'])
+                                            final_MODELS['dependant'].append(
+                                                md)
+                                            heritage = self.modelRefs(
+                                                md['schema'])
                                         found = True
                                         break
                                 if not found or heritage:
                                     for md in models['basic']:
                                         if md['name'] == rvalue:
                                             if md not in final_MODELS['basic']:
-                                                final_MODELS['basic'].append(md)
+                                                final_MODELS['basic'].append(
+                                                    md)
                                             break
                                     if heritage:   # IF MODEL HAS REFS GRAB THEM HERE
                                         for md in models['basic']:
                                             if md['name'] in heritage:
                                                 if md not in final_MODELS['basic']:
-                                                    final_MODELS['basic'].append(md)
+                                                    final_MODELS['basic'].append(
+                                                        md)
                                 print(final_MODELS)
                         # raise
                     integration = None
@@ -690,17 +713,20 @@ class ApiGatewayMolder():
                     if 'requestParameters' in method:
                         requestParameters = method['requestParameters']
                     if 'authorizerId' in method:
-                        auth = client.get_authorizer(restApiId=id, authorizerId=method['authorizerId'])
+                        auth = client.get_authorizer(
+                            restApiId=id, authorizerId=method['authorizerId'])
                         authName = auth['name']
                     if 'authorizationScopes' in method:
                         authScope = method['authorizationScopes']
                     add = False
-                    print("%s[%s]  type:[%s]. name:[%s]"%(integration, function, resourceType , resourceNname))
+                    print("%s[%s]  type:[%s]. name:[%s]" % (
+                        integration, function, resourceType, resourceNname))
                     if DEBUG:
-                        print('if (%s in %s and %s in %s) or %s == "*"' % (resourceType, integration, resourceNname, integration, resourceNname))
+                        print('if (%s in %s and %s in %s) or %s == "*"' % (resourceType,
+                                                                           integration, resourceNname, integration, resourceNname))
                         print("-------------------")
-                        print(". %s == %s" % (resourceString , pathString))
-     
+                        print(". %s == %s" % (resourceString, pathString))
+
                         # raise
                     if (resourceType in integration and resourceNname in integration) or resourceNname == "*":
                         add = True
@@ -747,7 +773,8 @@ class ApiGatewayMolder():
                     if add:
                         addedResource.update({path: mId})
                         if not 'credentials' in methodIntegration:
-                            methodIntegration.update({'credentials': tempResourceRole})
+                            methodIntegration.update(
+                                {'credentials': tempResourceRole})
                         integratedAPIs.append(
                             {'name': name,
                              'parentid': parentId,
@@ -768,16 +795,16 @@ class ApiGatewayMolder():
                              'httpMethod': function,
                              'methodIn': methodIntegration,
                              'methodResponse': methodResponse})
-        
+
         # print(addedResource)
         # raise
         for rK, rV in addedResource.items():  # Ensure OPTIONS picked up for Methods gathered
             if rK in possibleOptions:
                 integratedAPIs.append(possibleOptions[rK])
-        print ("=====>>>  !!")
-        print ("completed!!")
-        print ("completed!!")
-        print (integratedAPIs)
+        print("=====>>>  !!")
+        print("completed!!")
+        print("completed!!")
+        print(integratedAPIs)
         # print (addedResource)
         # raise ValueError(" stopping now for check...")
         if len(integratedAPIs) == 0:
@@ -797,8 +824,8 @@ class ApiGatewayMolder():
         resources = self.getAllResources(client, id)
         integratedAPIs = {}
 
-        print ("                            API GATEWAY       resources                                       ")
-        print ("     resources    %s     " % resources)
+        print("                            API GATEWAY       resources                                       ")
+        print("     resources    %s     " % resources)
         # for rest in resources['items']:
         for rest in resources:
             path = rest['path']
@@ -809,7 +836,8 @@ class ApiGatewayMolder():
             for key, value in rest['resourceMethods'].items():
 
                 # print integrated
-                method = client.get_method(restApiId=id, resourceId=mId, httpMethod=key)
+                method = client.get_method(
+                    restApiId=id, resourceId=mId, httpMethod=key)
                 del method['ResponseMetadata']
                 authType = method['authorizationType']
                 keyRequired = method['apiKeyRequired']
@@ -839,7 +867,7 @@ class ApiGatewayMolder():
         return integratedAPIs
 
     def describe_GatewayALL(self, target, aconnect, accountOrigin, accounts=[], types=[], sendto=None, targetAPI=None, isFullUpdate=False, needDirs=False):
-        print ("describe_GatewayALL")
+        print("describe_GatewayALL")
         # describe_gateway(self, resourceNname, resourceType, aconnect , resourceRole=None,targetAPI=None):
         allAccounts = True
         directorysNeeded = needDirs
@@ -864,15 +892,21 @@ class ApiGatewayMolder():
         print("### CREATING IAM ROLE: %s" % (iamRole))
 
         targetString = roleCleaner(target)
-        roles, resourceRole = describe_role(iamRole, aconnect, acctID, True if 'api' in types else False)
+        roles, resourceRole = describe_role(
+            iamRole, aconnect, acctID, True if 'api' in types else False)
         # (target,'lambda', aconnect, resourceRole, targetAPI)
-        apis, stages, models, auths = self.describe_gateway('*', '*', aconnect, resourceRole, targetAPI)
+        apis, stages, models, auths = self.describe_gateway(
+            '*', '*', aconnect, resourceRole, targetAPI)
 
-        taskMain, rootFolder, targetLabel = ansibleSetup(self.temp, target, isFullUpdate, skipFiles)
+        taskMain, rootFolder, targetLabel = ansibleSetup(
+            self.temp, target, isFullUpdate, skipFiles)
         taskMain = taskMain[0:2]
-        taskMain.append({"import_tasks": "../aws/agw_authorizer.yml", "vars": {"project": '{{ project }}'}})
-        taskMain.append({"import_tasks": "../aws/agw_model.yml", "vars": {"project": '{{ project }}'}})
-        taskMain.append({"import_tasks": "../aws/_agw.yml", "vars": {"project": '{{ project }}'}})
+        taskMain.append({"import_tasks": "../aws/agw_authorizer.yml",
+                         "vars": {"project": '{{ project }}'}})
+        taskMain.append({"import_tasks": "../aws/agw_model.yml",
+                         "vars": {"project": '{{ project }}'}})
+        taskMain.append({"import_tasks": "../aws/_agw.yml",
+                         "vars": {"project": '{{ project }}'}})
 
         skipping = error_path = None
         if 'error_path' in accountOrigin:
@@ -905,7 +939,9 @@ class ApiGatewayMolder():
         writeYaml(taskMain, mainIn)
         file_tasks = "%s.yaml" % mainIn
         file_defaults = None
-
+        if 'services_map' in accountOrigin:
+            mapfile = accountOrigin['services_map']
+            serviceMap = loadServicesMap(mapfile, None)
         for akey, account in accounts.items():
             # if not account in acctID:
             if acctID == akey:
@@ -913,6 +949,7 @@ class ApiGatewayMolder():
             if not allAccounts:
                 if not acctID in akey:
                     continue
+            eID = serviceID(akey, None, account['all'], serviceMap)
             accDetail = {
                 "account_id": akey,
                 "error_path": error_path,
@@ -920,7 +957,7 @@ class ApiGatewayMolder():
                 "env": account['title'],
                 "role_duration": 3600,
                 "region": "us-east-1",
-                "eid": account['eID'],
+                "eid": eID,
                 "roles": [],
                 "policies": []
             }
@@ -993,15 +1030,18 @@ class ApiGatewayMolder():
                 print("----> file: %s" % (mainIn))
                 account_replace("%s.yaml" % mainIn, str(acctID), str(akey))
                 for key, value in BUCKET_MAP[acctID].items():
-                    account_replace("%s.yaml" % mainIn, str(value), str(bucketObj[key]))
+                    account_replace("%s.yaml" % mainIn, str(
+                        value), str(bucketObj[key]))
                 for key, value in NETWORK_MAP[acctID].items():
-                    account_replace("%s.yaml" % mainIn, str(value), str(networkObj[key]))
+                    account_replace("%s.yaml" % mainIn, str(
+                        value), str(networkObj[key]))
                 for key, value in COGNITO_MAP[acctID].items():
-                    account_replace("%s.yaml" % mainIn, str(value), str(cognitoObj[key]))
+                    account_replace("%s.yaml" % mainIn, str(
+                        value), str(cognitoObj[key]))
 
         if directorysNeeded:
             if not sendto is None:
-                print (" .... creating a main.yaml for ansible using dev")
+                print(" .... creating a main.yaml for ansible using dev")
                 opt = "main_%s.yaml" % accountOrigin['all']
                 src = "%s/%s/%s" % (rootFolder, 'defaults', opt)
                 opt2 = "main.yaml"
@@ -1009,10 +1049,10 @@ class ApiGatewayMolder():
                 print("----> src: %s" % (src))
                 print("----> dst: %s" % (dst))
                 copyfile(src, dst)
-                print (" -------==------===---- COPY ALL. START....")
-                print (" sending to %s. from %s" % (sendto, rootFolder))
+                print(" -------==------===---- COPY ALL. START....")
+                print(" sending to %s. from %s" % (sendto, rootFolder))
                 distutils.dir_util.copy_tree(rootFolder, sendto)
-                print (" -------==------===---- FINAL YAML file....")
+                print(" -------==------===---- FINAL YAML file....")
                 ansibleRoot = sendto.split('roles/')[0]
                 targets = ['%s' % targetString]
                 rootYML = [{"name": "micro modler for ALL gateways resource -%s" % target,
@@ -1034,7 +1074,7 @@ class ApiGatewayMolder():
         return acctID, target, acctTitle, True
 
     def describe_GwResource(self, target, aconnect, accountOrigin, accounts=[], types=[], sendto=None, targetAPI=None, isFullUpdate=False, needDirs=False):
-        print ("describe_GwResource for target deployments")
+        print("describe_GwResource for target deployments")
         # describe_gateway(self, resourceNname, resourceType, aconnect , resourceRole=None,targetAPI=None):
         # isFullUpdate = False
         directorysNeeded = needDirs
@@ -1055,28 +1095,35 @@ class ApiGatewayMolder():
 
         iamRole = "CR-Lambda-VPC"
         print("### CREATING IAM ROLE: %s" % (iamRole))
-        roles, resourceRole = describe_role(iamRole, aconnect, acctID, True if 'api' in types else False)
+        roles, resourceRole = describe_role(
+            iamRole, aconnect, acctID, True if 'api' in types else False)
         targetString = roleCleaner(target)
         if not "[" in target:
-            msg = "[E] arguments givent do not contain methods for resource %s" % (target)
+            msg = "[E] arguments givent do not contain methods for resource %s" % (
+                target)
             print(msg)
             raise
         method = re.search(r'\[(.*?)\]', target).group(1)
 
         print("==-=-=-===-=--=-==--=-=>>>>> YMB")
         # (target,'lambda', aconnect, resourceRole, targetAPI)
-        if '/*[' in target:  #this means we must recursively find all lower paths
-            apis, stages, models, auths = self.describe_gateway(targetString, method, aconnect, resourceRole, targetAPI)
+        if '/*[' in target:  # this means we must recursively find all lower paths
+            apis, stages, models, auths = self.describe_gateway(
+                targetString, method, aconnect, resourceRole, targetAPI)
         else:
-            apis, stages, models, auths = self.describe_gateway(targetString, method, aconnect, resourceRole, targetAPI)
+            apis, stages, models, auths = self.describe_gateway(
+                targetString, method, aconnect, resourceRole, targetAPI)
         print("======================")
         print(len(apis))
         print("======================")
 
-        taskMain, rootFolder, targetLabel = ansibleSetup(self.temp, targetString, isFullUpdate, skipFiles)
+        taskMain, rootFolder, targetLabel = ansibleSetup(
+            self.temp, targetString, isFullUpdate, skipFiles)
         taskMain = taskMain[0:2]
-        taskMain.append({"import_tasks": "../aws/agw_model.yml", "vars": {"project": '{{ project }}'}})
-        taskMain.append({"import_tasks": "../aws/_agw.yml", "vars": {"project": '{{ project }}'}})
+        taskMain.append({"import_tasks": "../aws/agw_model.yml",
+                         "vars": {"project": '{{ project }}'}})
+        taskMain.append({"import_tasks": "../aws/_agw.yml",
+                         "vars": {"project": '{{ project }}'}})
         skipping = error_path = None
         if 'error_path' in accountOrigin:
             error_path = accountOrigin['error_path']
@@ -1187,26 +1234,29 @@ class ApiGatewayMolder():
                 writeYaml(defaultVar, mainIn)
                 account_replace("%s.yaml" % mainIn, str(acctID), str(akey))
                 for key, value in BUCKET_MAP[acctID].items():
-                    account_replace("%s.yaml" % mainIn, str(value), str(bucketObj[key]))
+                    account_replace("%s.yaml" % mainIn, str(
+                        value), str(bucketObj[key]))
                 for key, value in NETWORK_MAP[acctID].items():
-                    account_replace("%s.yaml" % mainIn, str(value), str(networkObj[key]))
+                    account_replace("%s.yaml" % mainIn, str(
+                        value), str(networkObj[key]))
                 for key, value in COGNITO_MAP[acctID].items():
-                    account_replace("%s.yaml" % mainIn, str(value), str(cognitoObj[key]))
+                    account_replace("%s.yaml" % mainIn, str(
+                        value), str(cognitoObj[key]))
 
             # option = "defaults_main%s"%account['all']
 
         if directorysNeeded:
             if not sendto is None:
-                print (" .... creating a main.yaml for ansible using dev")
+                print(" .... creating a main.yaml for ansible using dev")
                 opt = "main_%s.yaml" % accountOrigin['all']
                 src = "%s/%s/%s" % (rootFolder, 'defaults', opt)
                 opt2 = "main.yaml"
                 dst = "%s/%s/%s" % (rootFolder, 'defaults', opt2)
                 copyfile(src, dst)
-                print (" -------==------===---- COPY START....")
-                print (" sending to %s. from %s" % (sendto, rootFolder))
+                print(" -------==------===---- COPY START....")
+                print(" sending to %s. from %s" % (sendto, rootFolder))
                 distutils.dir_util.copy_tree(rootFolder, sendto)
-                print (" -------==------===---- FINAL YAML file....")
+                print(" -------==------===---- FINAL YAML file....")
                 ansibleRoot = sendto.split('roles/')[0]
                 targets = ['%s' % targetString]
                 rootYML = [{"name": "micro modler for gateways resource -%s" % target,

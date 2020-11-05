@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import awsconnect
-from microUtils import writeYaml, writeJSON, account_replace, loadServicesMap, loadConfig, ansibleSetup
+from microUtils import writeYaml, writeJSON, account_replace, loadServicesMap, loadConfig, ansibleSetup, serviceID
 #from microUtils import writeYaml, writeJSON, account_replace, loadServicesMap, loadConfig, ansibleSetup
 #from microFront import CloudFrontMolder
 from microGateway import ApiGatewayMolder
@@ -249,8 +249,14 @@ def main(api=None):
 
         awsconnect.stsClient_init()
         sts_client = awsconnect.stsClient
+        if 'eID' in origin:
+            eID = origin['eID']
+        if 'services_map' in origin:
+            mapfile = origin['services_map']
+            eID = serviceID(origin['account'], mapfile, origin['all'])
+
         aconnect = awsConnect(
-            accID, origin['eID'], origin['role_definer'], sts_client, region)
+            accID, eID, origin['role_definer'], sts_client, region)
         aconnect.connect()
     else:
         aconnect = type('obj', (object,), {'__get_client__': boto3.client})
