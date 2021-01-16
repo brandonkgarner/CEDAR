@@ -3,6 +3,32 @@
 <!-- ![cedar logo](imgs/cedar.jpeg =200x) -->
 
 <img src="imgs/CEDAR4.png" align="center"></a>
+# Requirements
+cloud packages like boto3
+Ansible
+
+# Example Deployments
+From tools/lambda-gen/main_Deployer.py
+```
+python Main_DEPLOYER.py -L dev "test,stage" * ENVR.yaml API_Name true
+```
+The above will deploy all "*" -L (lambdas) from 'dev' to 'test' then 'stage' environments as defined in ENVR.yaml file mappings, specific to "API_Name" gateway configuration and to replace "true" prior configurations.
+```
+python Main_DEPLOYER.py -L dev "test,stage" lambdaNameHere ENVR.yaml API_Name truetrue
+```
+The above will deploy a single cloud function named "lambdaNameHere"
+```
+python Main_DEPLOYER.py -G dev "test,stage" users[*] ENVR.yaml API_Name true
+```
+The above will deploy -G (API-Gateway,resource,method) named "users" with all methods " \[ * \] ". 
+```
+python Main_DEPLOYER.py -DY dev "test,stage" xx_tablename ENVR.yaml API_Name true
+```
+The above will deploy -DY (dynamo table) named "xx_tablename" this includes PKs, SKs, LSIs and GSIs  all triggers/streams associated with the table. 
+
+# Environment specific Unit tests
+You can test your cloud functions in their native habitat, with "pre", "run", "assert" and "post" capabilities.  [REMOTE METHOD TEST](/tools/testing)
+
 
 # Ansible (LIBS)
 
@@ -21,7 +47,7 @@
 
 ## MODULES
 
-#### Generic company module scripts can be found in the [library](/Ansible_Deployer/ansible/library) directory. To reference said scripts make sure you follow the examples found in each script, like so:
+#### Custom CEDAR ansible modules can be found in the [library](/ansible/library) directory. To reference said scripts make sure you follow the examples found in each script, like so:
 
 ```
 - name: dynamo cd import DATA from FILE import all on level
@@ -40,84 +66,3 @@
 
 ** the above assumes configuration file is used <role>/defaults/main.yml **
 
-# Vagrant CdCi (Setup)
-
-Install vagrant for your OS:
-
-- [Vagrantup.com](https://www.vagrantup.com/downloads.html)
-- add vbguest plugin:
-
-```bash
-vagrant plugin install vagrant-vbguest
-```
-
-Vagar command to build, must be in same dir as Vagrant file:
-
-```bash
-vagrant up
-```
-
-or
-
-```bash
-vagrant up <your definition node>
-```
-
-Destroy previous builds:
-
-```bash
-vagrant destroy
-```
-
-or
-
-```bash
-vagrant destroy <your definition node>
-```
-
-# Once requirements are met build DOCKER
-
-- vagrant ssh linux
-- cd inside /docker
-- then run:
-
-```bash
-docker build .
-```
-
-the "docker build ." file will run the ansible commands automatically
-
-- Run commands from docker:
-
-```bash
-sudo docker exec 665b4a1e17b6 echo 'test this'
-```
-
-- Command prompt in docker:
-
-```bash
-sudo docker exec -i -t 665b4a1e17b6 /bin/bash #by ID
-```
-
-```bash
-docker exec -it --privileged=true --user="root" e9bab2fed632 /bin/bash
-```
-
-Make sure pip is insalled:
-
-```bash
-apt-get install python-setuptools python-dev build-essential
-easy_install pip
-```
-
-### Issue Resolution:
-
-Failure commonly due to Older version of Vagrant or VirtualBox:
-https://www.virtualbox.org/wiki/Downloads
-
-if using vagrant 1.8.7 and on mac osX you may get metadata error with windows box.
-remove the embeded curl to avoid OS level conflicts:
-
-```bash
-sudo rm /opt/vagrant/embedded/bin/curl
-```
