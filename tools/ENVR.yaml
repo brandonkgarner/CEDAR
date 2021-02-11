@@ -1,7 +1,7 @@
 ---
 # Definitions
 target2DefineDev:
-  account: "779664517563"
+  account: "000000000000"
   services_map: "RESTRICTED.yaml"
   role_reg: "-{2}-"
   all: xx-dev
