@@ -1,3 +1,9 @@
+# This project has moved!
+https://github.com/cedardeployer/cedar
+
+---
+This repo will remain only for historic data
+
 # Cloud Environment Definition And Reproduction (CEDAR)
 
 <!-- ![cedar logo](imgs/cedar.jpeg =200x) -->
